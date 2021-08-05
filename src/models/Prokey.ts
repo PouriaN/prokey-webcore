@@ -455,6 +455,14 @@ export type StellarPaymentOp = {
     message: {},
 }
 
+export type StellarTxOpRequest = {
+}
+
+export type StellarSignTransactionRequest = {
+    signTxMessage: StellarSignTxMessage,
+    paymentOperation: StellarOperationMessage
+}
+
 export type StellarSignTxMessage = {
     address_n: Array<number>,
     source_account: string,

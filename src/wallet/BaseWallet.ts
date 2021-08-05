@@ -23,7 +23,7 @@ import {
     BitcoinBaseCoinInfoModel,
     EthereumBaseCoinInfoModel,
     Erc20BaseCoinInfoModel,
-    OmniCoinInfoModel
+    OmniCoinInfoModel, StellarCoinInfoModel
 } from '../models/CoinInfoModel'
 import { CoinBaseType, CoinInfo } from '../coins/CoinInfo'
 import { ICoinCommands } from '../device/ICoinCommand'
@@ -110,7 +110,7 @@ export abstract class BaseWallet {
     /**
      * Get CoinInfo
      */
-    public GetCoinInfo(): BitcoinBaseCoinInfoModel | EthereumBaseCoinInfoModel | Erc20BaseCoinInfoModel | OmniCoinInfoModel {
+    public GetCoinInfo(): BitcoinBaseCoinInfoModel | EthereumBaseCoinInfoModel | Erc20BaseCoinInfoModel | OmniCoinInfoModel | StellarCoinInfoModel {
         return this._coinInfo;
     }
 

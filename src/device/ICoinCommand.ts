@@ -79,6 +79,7 @@ export interface ICoinCommands {
         ProkeyResponses.TezosSignedTx |
         ProkeyResponses.BinanceSignTx |
         ProkeyResponses.CardanoSignedTx |
+        ProkeyResponses.StellarSignTransactionRequest |
         ProkeyResponses.RippleSignedTx>;
     
     SignMessage(

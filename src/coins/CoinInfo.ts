@@ -30,6 +30,7 @@ export enum CoinBaseType {
     NEM,
     OMNI,
     Ripple,
+    STELLAR,
     OTHERS
 }
 
@@ -71,6 +72,9 @@ export class CoinInfo {
                 break;
             case CoinBaseType.Ripple:
                 c = ProkeyCoinInfoModel.ripple;
+                break;
+            case CoinBaseType.STELLAR:
+                c = ProkeyCoinInfoModel.stellar;
                 break;
         }
 
@@ -164,6 +168,20 @@ export class CoinInfo {
             }
         });
 
+        // Add list of Stellar
+        ProkeyCoinInfoModel.stellar.forEach(element => {
+            if (compareVersions(firmwareVersion, element.support.optimum) >= 0) {
+                list.push({
+                    Name: element.name,
+                    Shortcut: element.shortcut,
+                    Type: CoinBaseType.STELLAR,
+                    Priority: element.priority,
+                    ContractAddress: '',
+                    Decimals: element.decimals,
+                })
+            }
+        });
+
         //! Sort the list by Priority
         list.sort((a, b) => {
             if (a.Priority > b.Priority)
@@ -241,6 +259,18 @@ export class CoinInfo {
                     Name: element.name,
                     Shortcut: element.shortcut,
                     Type: CoinBaseType.Ripple,
+                    Priority: element.priority,
+                    ContractAddress: '',
+                    Decimals: element.decimals,
+                });
+            });
+        }
+        else if(ct == CoinBaseType.STELLAR){
+            ProkeyCoinInfoModel.ripple.foreach(element => {
+                list.push({
+                    Name: element.name,
+                    Shortcut: element.shortcut,
+                    Type: CoinBaseType.STELLAR,
                     Priority: element.priority,
                     ContractAddress: '',
                     Decimals: element.decimals,
