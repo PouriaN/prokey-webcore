@@ -17,13 +17,13 @@ import {
     StellarFee,
     StellarTransactionResponse
 } from "../blockchain/servers/prokey/src/stellar/StelllarModels";
-import {common} from "protobufjs";
+import {Account} from "stellar-sdk";
+var StellarSdk = require('stellar-sdk');
 
 var WAValidator = require('multicoin-address-validator');
 
 export class StellarWallet extends BaseWallet {
     private readonly STELLAR_BASE_RESERVE = 0.5;
-    private readonly STELLAR_PUBLIC_NETWORK_PASSPHARE = "Public Global Stellar Network ; September 2015";
 
     _block_chain: StellarBlockchain;
     _accounts: Array<StellarAccountInfo>;
@@ -87,7 +87,7 @@ export class StellarWallet extends BaseWallet {
             source_account: path.address,
             fee: +selectedFee,
             sequence_number: this.GetAccount(accountNumber).sequence.toString(),
-            network_passphrase: this.STELLAR_PUBLIC_NETWORK_PASSPHARE,
+            network_passphrase: StellarSdk.Networks.PUBLIC,
             num_operations: 1 // just one payment transaction
         };
         let operation: StellarOperationMessage = {
@@ -100,7 +100,20 @@ export class StellarWallet extends BaseWallet {
             },
             amount: amount.toString(),
         }
-        return {signTxMessage: transaction, paymentOperation: operation};
+
+        let account = new Account(this.GetAccount(accountNumber).account_id, this.GetAccount(accountNumber).sequence.toString());
+
+        const stellarTransactionModel = new StellarSdk.TransactionBuilder(account, {fee: selectedFee, networkPassphrase: StellarSdk.Networks.PUBLIC })
+            .addOperation(
+                // this operation funds the new account with XLM
+                StellarSdk.Operation.payment({
+                    destination: toAccount,
+                    asset: StellarSdk.Asset.native(),
+                    amount: amount
+                })
+            )
+            .build();
+        return {signTxMessage: transaction, paymentOperation: operation, transactionModel: stellarTransactionModel};
     }
 
     public async SendTransaction(tx: RippleSignedTx): Promise<any> {

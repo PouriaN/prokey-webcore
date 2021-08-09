@@ -14,6 +14,11 @@ import {GeneralErrors, GeneralResponse} from "../models/GeneralResponse";
 import * as PathUtil from "../utils/pathUtils";
 import * as ProkeyResponses from "../models/Prokey";
 import {MyConsole} from "../utils/console";
+import {Transaction} from "stellar-base";
+import {Account} from "stellar-sdk";
+import {StellarAccountInfo} from "../blockchain/servers/prokey/src/stellar/StelllarModels";
+import * as Utility from "../utils/utils";
+var StellarSdk = require('stellar-sdk');
 
 export class StellarCommands implements ICoinCommands {
     private readonly _coinInfo: StellarCoinInfoModel;
@@ -73,11 +78,25 @@ export class StellarCommands implements ICoinCommands {
         return await device.SendMessage<ProkeyResponses.PublicKey>('GetPublicKey', param, 'PublicKey');
     }
 
-    SignMessage(device: Device, path: Array<number>, message: Uint8Array, coinName?: string): Promise<MessageSignature> {
+    public async SignMessage(device: Device, path: Array<number>, message: Uint8Array, coinName?: string): Promise<MessageSignature> {
+        let scriptType = PathUtil.GetScriptType(path);
+
+        let res = await device.SendMessage<ProkeyResponses.MessageSignature>('SignMessage', {
+            address_n: path,
+            message: message,
+            coin_name: coinName || 'Stellar',
+            script_type: scriptType,
+        }, 'MessageSignature');
+
+        if (res.signature) {
+            res.signature = Utility.ByteArrayToHexString(res.signature);
+        }
+
+        return res;
     }
 
-    public async SignTransaction(device: Device, transaction: StellarSignTransactionRequest): Promise<StellarSignedTx> {
-        MyConsole.Info("StellarSignTx", transaction);
+    public async SignTransaction(device: Device, transactionForSign: StellarSignTransactionRequest): Promise<string> {
+        MyConsole.Info("StellarSignTx", transactionForSign);
         if (!device) {
             let e: GeneralResponse = {
                 success: false,
@@ -88,7 +107,7 @@ export class StellarCommands implements ICoinCommands {
             throw e;
         }
 
-        if (!transaction) {
+        if (!transactionForSign) {
             let e: GeneralResponse = {
                 success: false,
                 errorCode: GeneralErrors.INVALID_PARAM,
@@ -98,15 +117,18 @@ export class StellarCommands implements ICoinCommands {
             throw e;
         }
 
-        // send stellar sign
-        // check it
-        let operationRequest = await device.SendMessage<ProkeyResponses.StellarTxOpRequest>('StellarSignTx', transaction.signTxMessage, 'StellarTxOpRequest');
-        // send operation
-        let confirmation = await device.SendMessage<StellarOperationMessage>('StellarPaymentOp', transaction.paymentOperation, 'StellarSignedTx');
+        let operationRequest = await device.SendMessage<ProkeyResponses.StellarTxOpRequest>('StellarSignTx', transactionForSign.signTxMessage, 'StellarTxOpRequest');
+
+        return await this.prepareTransactionForBroadcast(device, transactionForSign);
     }
 
-    VerifyMessage(device: Device, address: string, message: Uint8Array, signature: Uint8Array, coinName?: string): Promise<Success> {
-        return Promise.resolve(undefined);
+    public async VerifyMessage(device: Device, address: string, message: Uint8Array, signature: Uint8Array, coinName?: string): Promise<Success> {
+        return await device.SendMessage<ProkeyResponses.Success>('VerifyMessage', {
+            address: address,
+            signature: signature,
+            message: message,
+            coin_name: coinName || 'Stellar',
+        }, 'Success');
     }
 
     public GetAddressArray(path: Array<number> | string) : Array<number>{
@@ -115,5 +137,12 @@ export class StellarCommands implements ICoinCommands {
         } else {
             return  path;
         }
+    }
+
+    private async prepareTransactionForBroadcast(device: Device, transactionForSign: StellarSignTransactionRequest) {
+        let signResponse = await device.SendMessage<StellarSignedTx>('StellarPaymentOp', transactionForSign.paymentOperation, 'StellarSignedTx');
+        let transactionModel = transactionForSign.transactionModel;
+        transactionModel.addSignature(signResponse.public_key, signResponse.signature)
+        return transactionModel.toEnvelope().toXDR().toString("base64");
     }
 }

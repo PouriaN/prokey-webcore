@@ -18,6 +18,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+import {Transaction} from "stellar-base";
+
 export type CipheredKeyValue = {
     value: string,
 }
@@ -441,6 +443,11 @@ export type NEMSignTxMessage = {
 
 // Stellar types
 
+export type StellarDecoratedSignature = {
+    hint: string,
+    signature: string
+}
+
 export type StellarAddress = {
     address: string,
 }
@@ -461,6 +468,7 @@ export type StellarTxOpRequest = {
 export type StellarSignTransactionRequest = {
     signTxMessage: StellarSignTxMessage,
     paymentOperation: StellarOperationMessage
+    transactionModel: Transaction
 }
 
 export type StellarSignTxMessage = {

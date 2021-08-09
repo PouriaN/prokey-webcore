@@ -14599,33 +14599,33 @@
   ],
   "stellar": [
     {
-      "name": "Ripple",
-      "shortcut": "XRP",
-      "slip44": 144,
-      "decimals": 6,
-      "priority": 7,
-      "on_device": "Ripple",
+      "name": "Stellar",
+      "shortcut": "XLM",
+      "slip44": 148,
+      "decimals": 7,
+      "priority": 9,
+      "on_device": "Stellar",
       "test": false,
       "support": {
-        "optimum": "1.10.0"
+        "optimum": "1.8.0"
       },
-      "tx_url": "https://xrpscan.com/tx/{hash}",
+      "tx_url": "https://stellarchain.io/tx/{hash}",
       "wallets": [
         "https://wallet.prokey.io"
       ]
     },
     {
-      "name": "Ripple Testnet",
-      "shortcut": "tXRP",
-      "slip44": 144,
+      "name": "Stellar Testnet",
+      "shortcut": "tXLM",
+      "slip44": 148,
       "decimals": 6,
       "priority": 100,
-      "on_device": "Ripple Testnet",
+      "on_device": "Stellar Testnet",
       "test": true,
       "support": {
-        "optimum": "1.10.0"
+        "optimum": "1.8.0"
       },
-      "tx_url": "https://testnet.xrpl.org/transactions/{hash}",
+      "tx_url": "http://testnet.stellarchain.io/transactions/{hash}",
       "wallets": [
         "https://wallet.prokey.io"
       ]

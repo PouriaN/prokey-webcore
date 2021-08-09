@@ -28,6 +28,7 @@ import {
     OmniCoinInfoModel, 
     RippleCoinInfoModel } from '../models/CoinInfoModel';
 import { RippleTransaction } from '../models/Responses-V6';
+import {StellarSignTransactionRequest} from "../models/Prokey";
 
 export interface ICoinCommands {
     GetCoinInfo() : BitcoinBaseCoinInfoModel | EthereumBaseCoinInfoModel | OmniCoinInfoModel | RippleCoinInfoModel | null;
@@ -71,7 +72,8 @@ export interface ICoinCommands {
         device: Device,
         transaction:BitcoinTx | 
                     EthereumTx |
-                    RippleTransaction,
+                    RippleTransaction |
+            StellarSignTransactionRequest
     ): Promise<ProkeyResponses.SignedTx |
         ProkeyResponses.EthereumSignedTx |
         ProkeyResponses.EosSignedTx |
@@ -79,7 +81,7 @@ export interface ICoinCommands {
         ProkeyResponses.TezosSignedTx |
         ProkeyResponses.BinanceSignTx |
         ProkeyResponses.CardanoSignedTx |
-        ProkeyResponses.StellarSignTransactionRequest |
+        string |
         ProkeyResponses.RippleSignedTx>;
     
     SignMessage(
