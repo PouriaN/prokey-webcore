@@ -18,52 +18,51 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-import { Device } from "../device/Device";
+import {Device} from "../device/Device";
 import {
     BitcoinBaseCoinInfoModel,
-    EthereumBaseCoinInfoModel,
     Erc20BaseCoinInfoModel,
-    OmniCoinInfoModel, StellarCoinInfoModel
+    EthereumBaseCoinInfoModel,
+    OmniCoinInfoModel,
+    StellarCoinInfoModel
 } from '../models/CoinInfoModel'
-import { CoinBaseType, CoinInfo } from '../coins/CoinInfo'
-import { ICoinCommands } from '../device/ICoinCommand'
-import { BitcoinCommands } from '../device/BitcoinCommands';
-import { EthereumCommands } from '../device/EthereumCommands';
+import {CoinBaseType, CoinInfo} from '../coins/CoinInfo'
+import {ICoinCommands} from '../device/ICoinCommand'
+import {BitcoinCommands} from '../device/BitcoinCommands';
+import {EthereumCommands} from '../device/EthereumCommands';
 import {
     AddressModel,
-    EthereumAddress,
-    LiskAddress,
-    NEMAddress,
-    RippleAddress,
-    CardanoAddress,
-    StellarAddress,
-    PublicKey,
-    CardanoPublicKey,
     BinancePublicKey,
-    EosPublicKey,
-    LiskPublicKey,
-    TezosPublicKey,
-    SignedTx,
-    EthereumSignedTx,
-    EosSignedTx,
-    LiskSignedTx,
-    TezosSignedTx,
     BinanceSignTx,
+    CardanoAddress,
+    CardanoPublicKey,
     CardanoSignedTx,
-    Success
-} from "../models/Prokey";
-
-import {
+    EosPublicKey,
+    EosSignedTx,
+    EthereumAddress,
+    EthereumSignedTx,
+    LiskAddress,
+    LiskMessageSignature,
+    LiskPublicKey,
+    LiskSignedTx,
     MessageSignature,
-    LiskMessageSignature
-} from '../models/Prokey';
+    NEMAddress,
+    PublicKey,
+    RippleAddress,
+    SignedTx,
+    StellarAddress,
+    Success,
+    TezosPublicKey,
+    TezosSignedTx
+} from "../models/Prokey";
 
 import * as Util from '../utils/utils';
 
-import { BitcoinTx } from '../models/BitcoinTx';
-import { EthereumTx } from '../models/EthereumTx';
-import { RippleCommands } from "../device/RippleCommands";
-import { RippleSignedTx, RippleTransaction } from "../models/Responses-V6";
+import {BitcoinTx} from '../models/BitcoinTx';
+import {EthereumTx} from '../models/EthereumTx';
+import {RippleCommands} from "../device/RippleCommands";
+import {RippleSignedTx, RippleTransaction} from "../models/Responses-V6";
+import {StellarCommands} from "../device/StellarCommands";
 
 /**
  * This is the base class for all implemented wallets
@@ -101,9 +100,12 @@ export abstract class BaseWallet {
                 this._commands = new RippleCommands(_coinName);
                 break;
 
+            case CoinBaseType.STELLAR:
+                this._commands = new StellarCommands(_coinName);
+                break;
+
             default:
                 throw new Error("Unknown coin type");
-                break;
         }
     }
 
