@@ -81,6 +81,29 @@ export interface StellarTransaction {
     "memo_bytes": string
 }
 
+export interface StellarTransactionOperationResponse {
+    "operations": StellarTransactionOperation[],
+    "nextPageCursor": string,
+    "prevPageCursor": string
+}
+
+export interface StellarTransactionOperation {
+    "id": number,
+    "source_account": string,
+    "paging_token": string,
+    "type": string,
+    "type_i": number,
+    "created_at": string,
+    "transaction_hash": string,
+    "transaction_successful": boolean
+    "asset_type": string,
+    "from": string,
+    "to": string,
+    "amount": string,
+    "name": string,
+    "value": string
+}
+
 interface FeeState {
     "max": string;
     "min": string;

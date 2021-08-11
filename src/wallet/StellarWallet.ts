@@ -14,7 +14,7 @@ import {
 import {StellarBlockchain} from "../blockchain/servers/prokey/src/stellar/Stellar";
 import {
     StellarAccountInfo,
-    StellarFee,
+    StellarFee, StellarTransactionOperation, StellarTransactionOperationResponse,
     StellarTransactionResponse
 } from "../blockchain/servers/prokey/src/stellar/StelllarModels";
 import {Account} from "stellar-sdk";
@@ -67,6 +67,10 @@ export class StellarWallet extends BaseWallet {
         return await this._block_chain.GetAccountTransactions(account, limit, cursor);
     }
 
+    public async GetTransactionOperations(transactionId: string): Promise<StellarTransactionOperationResponse | null> {
+        return await this._block_chain.GetTransactionOperations(transactionId);
+    }
+
     public async GetCurrentFee(): Promise<StellarFee> {
         return await this._block_chain.GetCurrentFee();
     }
@@ -116,8 +120,8 @@ export class StellarWallet extends BaseWallet {
         return {signTxMessage: transaction, paymentOperation: operation, transactionModel: stellarTransactionModel};
     }
 
-    public async SendTransaction(tx: RippleSignedTx): Promise<any> {
-        return await this._block_chain.BroadCastTransaction(tx.serialized_tx);
+    public async SendTransaction(tx: string): Promise<any> {
+        return await this._block_chain.BroadCastTransaction(tx);
     }
 
     public GetAccountBalance(accountNumber: number): number {

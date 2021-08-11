@@ -1,6 +1,11 @@
 import {ProkeyBaseBlockChain} from "../ProkeyBaseBlockChain";
 import {RequestAddressInfo} from "../../../../../models/GenericWalletModel";
-import {StellarAccountInfo, StellarFee, StellarTransactionResponse} from "./StelllarModels";
+import {
+    StellarAccountInfo,
+    StellarFee,
+    StellarTransactionOperation, StellarTransactionOperationResponse,
+    StellarTransactionResponse
+} from "./StelllarModels";
 
 export class StellarBlockchain extends ProkeyBaseBlockChain {
     _coinName: string;
@@ -24,14 +29,23 @@ export class StellarBlockchain extends ProkeyBaseBlockChain {
         }
     }
 
-    public async GetAccountTransactions(accountAddress: string, limit: number = 10, cursor?: string): Promise<StellarTransactionResponse | null>
-    {
+    public async GetAccountTransactions(accountAddress: string, limit: number = 10, cursor?: string): Promise<StellarTransactionResponse | null> {
         let queryUrl = `address/transactions/${this._coinName}/${accountAddress}?limit=${limit}`;
         if (cursor) {
             queryUrl += `cursor=${cursor}`
         }
         let serverResponse = await this.GetFromServer<any>(queryUrl);
         if (serverResponse != null && serverResponse.result.transactions != null)
+        {
+            return serverResponse.result;
+        }
+        return null;
+    }
+
+    public async GetTransactionOperations(transactionId: string): Promise<StellarTransactionOperationResponse | null> {
+        let queryUrl = `/transaction/${this._coinName}/operations`;
+        let serverResponse = await this.GetFromServer<any>(queryUrl);
+        if (serverResponse != null && serverResponse.result.operations != null)
         {
             return serverResponse.result;
         }

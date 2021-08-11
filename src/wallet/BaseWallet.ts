@@ -50,7 +50,7 @@ import {
     PublicKey,
     RippleAddress,
     SignedTx,
-    StellarAddress,
+    StellarAddress, StellarSignTransactionRequest,
     Success,
     TezosPublicKey,
     TezosSignedTx
@@ -160,8 +160,8 @@ export abstract class BaseWallet {
      * Sign Transaction
      * @param tx transaction to be signed by device
      */
-    public async SignTransaction<T extends SignedTx | EthereumSignedTx | EosSignedTx | LiskSignedTx | TezosSignedTx | BinanceSignTx | CardanoSignedTx | RippleSignedTx>
-        (tx: BitcoinTx | EthereumTx | RippleTransaction): Promise<T> 
+    public async SignTransaction<T extends SignedTx | EthereumSignedTx | EosSignedTx | LiskSignedTx | TezosSignedTx | BinanceSignTx | CardanoSignedTx | RippleSignedTx | string>
+        (tx: BitcoinTx | EthereumTx | RippleTransaction| StellarSignTransactionRequest): Promise<T>
     {
         return await this._commands.SignTransaction(this._device, tx) as T;
     }
