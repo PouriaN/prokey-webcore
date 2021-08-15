@@ -1,9 +1,9 @@
 /*
  * This is part of PROKEY HARDWARE WALLET project
  * Copyright (C) Prokey.io
- * 
+ *
  * Hadi Robati, hadi@prokey.io
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -207,7 +207,7 @@ export class WebUsb implements ITransport {
                 else
                     bDataToSend[n++] = 0x00; // Padding
             }
-            
+
             await this._port.transferOut(1, bDataToSend);
         }
 
@@ -250,13 +250,13 @@ export class WebUsb implements ITransport {
             }
 
             if (firstPacket) {
-                
+
                 var buf = new Uint8Array(res.data.buffer);
                 // Check start bytes
                 if (buf[0] != 0x3F || buf[1] != 0x23 || buf[2] != 0x23) {
-                    return { 
-                        success: false, 
-                        errorCode: GeneralErrors.PROTO_ERR 
+                    return {
+                        success: false,
+                        errorCode: GeneralErrors.PROTO_ERR
                     };
                 }
 
@@ -286,9 +286,9 @@ export class WebUsb implements ITransport {
 
                 // validate start byte
                 if (buf[0] != 0x3F) {
-                    return { 
-                        success: false, 
-                        errorCode: GeneralErrors.PROTO_ERR 
+                    return {
+                        success: false,
+                        errorCode: GeneralErrors.PROTO_ERR
                     };
                 }
 
@@ -304,7 +304,7 @@ export class WebUsb implements ITransport {
                 continue;
 
             return {
-                success: true, 
+                success: true,
                 payload: {
                     MsgId: msgId,
                     Lenght: msgLen,
@@ -340,7 +340,7 @@ export class WebUsb implements ITransport {
             return { success: false, errorCode: GeneralErrors.NO_DEVICE };
         }
 
-        // TODO: Handle more than one device 
+        // TODO: Handle more than one device
         // Check the devices which has been selected before
         for (let i = 0; i < devices.length; i++) {
             var existDevice = devices[i];
@@ -384,13 +384,6 @@ export class WebUsb implements ITransport {
             // Select device configuration 1 -> Prokey Optimum
             if (this._port.configuration === null) {
                 await this._port.selectConfiguration(1);
-            }
-
-            if (typeof navigator !== `undefined`) {
-                const chromeOS = /\bCrOS\b/.test(navigator.userAgent);
-                if (!chromeOS) {
-                    await this._port.reset();
-                }
             }
 
             // Select first interface. (The second one is for 2FA)

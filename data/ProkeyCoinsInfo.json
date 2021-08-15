@@ -14618,7 +14618,7 @@
       "name": "Stellar Testnet",
       "shortcut": "tXLM",
       "slip44": 148,
-      "decimals": 6,
+      "decimals": 7,
       "priority": 100,
       "on_device": "Stellar Testnet",
       "test": true,

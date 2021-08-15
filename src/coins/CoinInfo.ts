@@ -75,6 +75,7 @@ export class CoinInfo {
                 break;
             case CoinBaseType.STELLAR:
                 c = ProkeyCoinInfoModel.stellar;
+                console.log(c);
                 break;
         }
 
@@ -85,6 +86,8 @@ export class CoinInfo {
             });
         } else {
             ci = c.find(obj => {
+                console.log(f);
+                console.log(obj.name.toLowerCase())
                 return obj.name.toLowerCase() == f || obj.shortcut.toLowerCase() == f;
             });
         }

@@ -15,16 +15,14 @@ import * as PathUtil from "../utils/pathUtils";
 import * as ProkeyResponses from "../models/Prokey";
 import {MyConsole} from "../utils/console";
 import {Transaction} from "stellar-base";
-import {Account} from "stellar-sdk";
 import {StellarAccountInfo} from "../blockchain/servers/prokey/src/stellar/StelllarModels";
 import * as Utility from "../utils/utils";
-var StellarSdk = require('stellar-sdk');
 
 export class StellarCommands implements ICoinCommands {
     private readonly _coinInfo: StellarCoinInfoModel;
 
     constructor(coinName: string) {
-        this._coinInfo = CoinInfo.Get<RippleCoinInfoModel>(coinName, CoinBaseType.Ripple);
+        this._coinInfo = CoinInfo.Get<RippleCoinInfoModel>(coinName, CoinBaseType.STELLAR);
     }
 
     public async GetAddress(device: Device, path: Array<number> | string, showOnProkey: boolean = true): Promise<StellarAddress> {

@@ -1,12 +1,10 @@
 import {BaseWallet} from "./BaseWallet";
 import {Device} from "../device/Device";
 import {CoinBaseType} from "../coins/CoinInfo";
-import {RippleCoinInfoModel, StellarCoinInfoModel} from "../models/CoinInfoModel";
+import {StellarCoinInfoModel} from "../models/CoinInfoModel";
 import * as PathUtil from "../utils/pathUtils";
 import {
     AddressModel,
-    RippleSignedTx,
-    RippleTransaction,
     StellarAddress, StellarAsset, StellarOperationMessage, StellarPaymentOp,
     StellarSignTransactionRequest,
     StellarSignTxMessage
@@ -17,8 +15,7 @@ import {
     StellarFee, StellarTransactionOperation, StellarTransactionOperationResponse,
     StellarTransactionResponse
 } from "../blockchain/servers/prokey/src/stellar/StelllarModels";
-import {Account} from "stellar-sdk";
-var StellarSdk = require('stellar-sdk');
+import {Account, Asset, Operation, TransactionBuilder} from "stellar-base";
 
 var WAValidator = require('multicoin-address-validator');
 
@@ -29,7 +26,7 @@ export class StellarWallet extends BaseWallet {
     _accounts: Array<StellarAccountInfo>;
 
     constructor(device: Device, coinName: string) {
-        super(device, coinName, CoinBaseType.Ripple);
+        super(device, coinName, CoinBaseType.STELLAR);
         this._block_chain = new StellarBlockchain(this.GetCoinInfo().shortcut);
         this._accounts = new Array<StellarAccountInfo>();
     }
@@ -75,6 +72,8 @@ export class StellarWallet extends BaseWallet {
         return await this._block_chain.GetCurrentFee();
     }
 
+    private readonly _networkPassphrase = "Public Global Stellar Network ; September 2015";
+
     public GenerateTransaction(toAccount: string, amount: number, accountNumber: number, selectedFee: string): StellarSignTransactionRequest {
         // TODO: add memo latter
         // Check balance
@@ -91,7 +90,7 @@ export class StellarWallet extends BaseWallet {
             source_account: path.address,
             fee: +selectedFee,
             sequence_number: this.GetAccount(accountNumber).sequence.toString(),
-            network_passphrase: StellarSdk.Networks.PUBLIC,
+            network_passphrase: this._networkPassphrase,
             num_operations: 1 // just one payment transaction
         };
         let operation: StellarOperationMessage = {
@@ -107,13 +106,13 @@ export class StellarWallet extends BaseWallet {
 
         let account = new Account(this.GetAccount(accountNumber).account_id, this.GetAccount(accountNumber).sequence.toString());
 
-        const stellarTransactionModel = new StellarSdk.TransactionBuilder(account, {fee: selectedFee, networkPassphrase: StellarSdk.Networks.PUBLIC })
+        const stellarTransactionModel = new TransactionBuilder(account, {fee: selectedFee, networkPassphrase: this._networkPassphrase })
             .addOperation(
                 // this operation funds the new account with XLM
-                StellarSdk.Operation.payment({
+                Operation.payment({
                     destination: toAccount,
-                    asset: StellarSdk.Asset.native(),
-                    amount: amount
+                    asset: Asset.native(),
+                    amount: amount.toString()
                 })
             )
             .build();
@@ -152,7 +151,7 @@ export class StellarWallet extends BaseWallet {
             accountNumber,          // each address is considered as an account
             1,        // We only need an address
             false,           // Segwit not defined so we should use 44'
-            false,           // No change address defined in ripple
+            false,           // No change address defined in stellar
             0);
         return path[0];
     }
