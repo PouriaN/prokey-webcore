@@ -101,7 +101,9 @@ export interface StellarTransactionOperation {
     "to": string,
     "amount": string,
     "name": string,
-    "value": string
+    "value": string,
+    "funder": string,
+    "starting_balance": string
 }
 
 interface FeeState {

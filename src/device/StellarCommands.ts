@@ -14,9 +14,11 @@ import {GeneralErrors, GeneralResponse} from "../models/GeneralResponse";
 import * as PathUtil from "../utils/pathUtils";
 import * as ProkeyResponses from "../models/Prokey";
 import {MyConsole} from "../utils/console";
-import {Transaction} from "stellar-base";
+import {StrKey, Transaction} from "stellar-base";
 import {StellarAccountInfo} from "../blockchain/servers/prokey/src/stellar/StelllarModels";
 import * as Utility from "../utils/utils";
+import { util } from "protobufjs";
+import { ByteArrayToHexString } from "../utils/utils"
 
 export class StellarCommands implements ICoinCommands {
     private readonly _coinInfo: StellarCoinInfoModel;
@@ -129,7 +131,7 @@ export class StellarCommands implements ICoinCommands {
         }, 'Success');
     }
 
-    public GetAddressArray(path: Array<number> | string) : Array<number>{
+    public GetAddressArray(path: Array<number> | string) : Array<number> {
         if (typeof path == "string") {
                 return  PathUtil.getHDPath(path);
         } else {
@@ -140,7 +142,12 @@ export class StellarCommands implements ICoinCommands {
     private async prepareTransactionForBroadcast(device: Device, transactionForSign: StellarSignTransactionRequest) {
         let signResponse = await device.SendMessage<StellarSignedTx>('StellarPaymentOp', transactionForSign.paymentOperation, 'StellarSignedTx');
         let transactionModel = transactionForSign.transactionModel;
-        transactionModel.addSignature(signResponse.public_key, signResponse.signature)
-        return transactionModel.toEnvelope().toXDR().toString("base64");
+        let stringSignature = ByteArrayToHexString(signResponse.signature);
+        let decodedPublicKey = StrKey.encodeEd25519PublicKey(signResponse.public_key as Buffer);
+        transactionModel.addSignature(
+            decodedPublicKey,
+            Buffer.from(stringSignature, 'hex').toString('base64')
+        );
+      return transactionModel.toEnvelope().toXDR().toString("base64");
     }
 }

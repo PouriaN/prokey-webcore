@@ -1,9 +1,9 @@
 /*
  * This is part of PROKEY HARDWARE WALLET project
  * Copyright (C) Prokey.io
- * 
+ *
  * Hadi Robati, hadi@prokey.io
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -75,7 +75,6 @@ export class CoinInfo {
                 break;
             case CoinBaseType.STELLAR:
                 c = ProkeyCoinInfoModel.stellar;
-                console.log(c);
                 break;
         }
 
@@ -86,8 +85,6 @@ export class CoinInfo {
             });
         } else {
             ci = c.find(obj => {
-                console.log(f);
-                console.log(obj.name.toLowerCase())
                 return obj.name.toLowerCase() == f || obj.shortcut.toLowerCase() == f;
             });
         }

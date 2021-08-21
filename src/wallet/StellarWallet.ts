@@ -15,12 +15,13 @@ import {
     StellarFee, StellarTransactionOperation, StellarTransactionOperationResponse,
     StellarTransactionResponse
 } from "../blockchain/servers/prokey/src/stellar/StelllarModels";
-import {Account, Asset, Operation, TransactionBuilder} from "stellar-base";
+import {Account, Asset, Memo, MemoText, Operation, TransactionBuilder} from "stellar-base";
 
 var WAValidator = require('multicoin-address-validator');
 
 export class StellarWallet extends BaseWallet {
     private readonly STELLAR_BASE_RESERVE = 0.5;
+    private readonly _networkPassphrase = "Public Global Stellar Network ; September 2015";
 
     _block_chain: StellarBlockchain;
     _accounts: Array<StellarAccountInfo>;
@@ -52,12 +53,11 @@ export class StellarWallet extends BaseWallet {
         });
     }
 
-    // Get ripple account info from blockchain
     private async GetAccountInfo(accountNumber: number): Promise<StellarAccountInfo | null> {
         let path = this.GetCoinPath(accountNumber);
         let address = await this.GetAddress<StellarAddress>(path.path, false);
-
-        return await this._block_chain.GetAddressInfo({address: address.address});
+        let accountInfo = await this._block_chain.GetAddressInfo({address: address.address})
+        return accountInfo;
     }
 
     public async GetAccountTransactions(account: string, limit?: number, cursor?: string): Promise<StellarTransactionResponse | null> {
@@ -72,8 +72,6 @@ export class StellarWallet extends BaseWallet {
         return await this._block_chain.GetCurrentFee();
     }
 
-    private readonly _networkPassphrase = "Public Global Stellar Network ; September 2015";
-
     public GenerateTransaction(toAccount: string, amount: number, accountNumber: number, selectedFee: string): StellarSignTransactionRequest {
         // TODO: add memo latter
         // Check balance
@@ -85,27 +83,9 @@ export class StellarWallet extends BaseWallet {
 
         let path = this.GetCoinPath(accountNumber);
 
-        let transaction: StellarSignTxMessage = {
-            address_n: path.path,
-            source_account: path.address,
-            fee: +selectedFee,
-            sequence_number: this.GetAccount(accountNumber).sequence.toString(),
-            network_passphrase: this._networkPassphrase,
-            num_operations: 1 // just one payment transaction
-        };
-        let operation: StellarOperationMessage = {
-            type: 'StellarPaymentOp',
-            source_account: path.address,
-            destination_account: toAccount,
-            asset: {
-                type: 0,
-                code: "XLM"
-            },
-            amount: amount.toString(),
-        }
+        const accountObject = this.GetAccount(accountNumber);
 
-        let account = new Account(this.GetAccount(accountNumber).account_id, this.GetAccount(accountNumber).sequence.toString());
-
+        let account = new Account(accountObject.account_id, accountObject.sequence.toString());
         const stellarTransactionModel = new TransactionBuilder(account, {fee: selectedFee, networkPassphrase: this._networkPassphrase })
             .addOperation(
                 // this operation funds the new account with XLM
@@ -115,7 +95,37 @@ export class StellarWallet extends BaseWallet {
                     amount: amount.toString()
                 })
             )
+            .setTimeout(180) // wait 3 min for transaction
+            .addMemo(Memo.text("test text"))
             .build();
+
+        let transaction: StellarSignTxMessage = {
+            address_n: path.path,
+            source_account: accountObject.account_id,
+            fee: +selectedFee,
+            sequence_number: accountObject.sequence.toString(),
+            network_passphrase: this._networkPassphrase,
+            num_operations: 1, // just one payment transaction
+            memo_text: "test text",
+            memo_type: 1
+        };
+
+        if (stellarTransactionModel.timeBounds) {
+            transaction.timebounds_start = +stellarTransactionModel.timeBounds.minTime;
+            transaction.timebounds_end = +stellarTransactionModel.timeBounds.maxTime;
+        }
+
+        let operation: StellarOperationMessage = {
+            type: 'StellarPaymentOp',
+            source_account: accountObject.account_id,
+            destination_account: toAccount,
+            asset: {
+                type: 0,
+                code: "XLM"
+            },
+            amount: (amount * 10_000_000).toString(),
+        }
+
         return {signTxMessage: transaction, paymentOperation: operation, transactionModel: stellarTransactionModel};
     }
 
@@ -144,15 +154,16 @@ export class StellarWallet extends BaseWallet {
         return  this._accounts[accountNumber];
     }
 
-    private GetCoinPath(accountNumber: number): AddressModel {
-        let slip44 = (super.GetCoinInfo() as StellarCoinInfoModel).slip44;
-        let path = PathUtil.GetListOfBipPath(
-            slip44,
-            accountNumber,          // each address is considered as an account
-            1,        // We only need an address
-            false,           // Segwit not defined so we should use 44'
-            false,           // No change address defined in stellar
-            0);
-        return path[0];
+  public GetCoinPath(accountNumber: number): AddressModel {
+    let slip44 = (super.GetCoinInfo() as StellarCoinInfoModel).slip44;
+
+    return <AddressModel>{
+      path: [
+        0x8000002C, // 44'
+        0x80000000 + slip44, // 148'
+        0x80000000 + accountNumber
+      ],
+      serializedPath: `44'/${slip44}'/${0x8000000 + accountNumber}'`
     }
+  }
 }

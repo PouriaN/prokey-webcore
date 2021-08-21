@@ -13,7 +13,7 @@ export class StellarBlockchain extends ProkeyBaseBlockChain {
     // Constructor
     constructor(coinName: string = "Xlm")
     {
-        super();
+        super("http://127.0.0.1:50001/api/");
         this._coinName = coinName;
     }
 
@@ -30,24 +30,24 @@ export class StellarBlockchain extends ProkeyBaseBlockChain {
     }
 
     public async GetAccountTransactions(accountAddress: string, limit: number = 10, cursor?: string): Promise<StellarTransactionResponse | null> {
-        let queryUrl = `address/transactions/${this._coinName}/${accountAddress}?limit=${limit}`;
+        let queryUrl = `${this._coinName}/transaction/account/${accountAddress}?limit=${limit}`;
         if (cursor) {
             queryUrl += `cursor=${cursor}`
         }
         let serverResponse = await this.GetFromServer<any>(queryUrl);
-        if (serverResponse != null && serverResponse.result.transactions != null)
+        if (serverResponse != null && serverResponse.transactions != null)
         {
-            return serverResponse.result;
+            return serverResponse;
         }
         return null;
     }
 
     public async GetTransactionOperations(transactionId: string): Promise<StellarTransactionOperationResponse | null> {
-        let queryUrl = `/transaction/${this._coinName}/operations`;
+        let queryUrl = `${this._coinName}/transaction/${transactionId}/operations`;
         let serverResponse = await this.GetFromServer<any>(queryUrl);
-        if (serverResponse != null && serverResponse.result.operations != null)
+        if (serverResponse != null && serverResponse.operations != null)
         {
-            return serverResponse.result;
+            return serverResponse;
         }
         return null;
     }
