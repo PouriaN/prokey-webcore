@@ -1,7 +1,7 @@
 /*
  * This is part of PROKEY HARDWARE WALLET project
  * Copyright (C) Prokey.io
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -89,7 +89,7 @@ export interface MiscCoinInfoModel {
     curve: string;
     min_fee: number;
     max_fee: number;
-    label: string; 
+    label: string;
     name: string;
     shortcut: string;
     slip44: number;
@@ -116,6 +116,17 @@ export interface OmniCoinInfoModel {
 }
 
 export interface RippleCoinInfoModel {
+    name: string;
+    shortcut: string;
+    slip44: number;
+    decimals: number;
+    on_device: string,
+    support: ProkeySupport;
+    test?: boolean,
+    tx_url: string,
+}
+
+export interface NemCoinInfoModel {
     name: string;
     shortcut: string;
     slip44: number;

@@ -1,9 +1,9 @@
 /*
  * This is part of PROKEY HARDWARE WALLET project
  * Copyright (C) Prokey.io
- * 
+ *
  * Hadi Robati, hadi@prokey.io
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -22,15 +22,17 @@ import { Device } from './Device';
 import * as ProkeyResponses from '../models/Prokey';
 import { BitcoinTx } from '../models/BitcoinTx';
 import { EthereumTx } from '../models/EthereumTx';
-import { 
-    BitcoinBaseCoinInfoModel, 
-    EthereumBaseCoinInfoModel, 
-    OmniCoinInfoModel, 
-    RippleCoinInfoModel } from '../models/CoinInfoModel';
+import {
+  BitcoinBaseCoinInfoModel,
+  EthereumBaseCoinInfoModel, NemCoinInfoModel,
+  OmniCoinInfoModel,
+  RippleCoinInfoModel
+} from '../models/CoinInfoModel';
 import { RippleTransaction } from '../models/Responses-V6';
+import {NEMSignedTx, NEMSignTxMessage} from "../models/Prokey";
 
 export interface ICoinCommands {
-    GetCoinInfo() : BitcoinBaseCoinInfoModel | EthereumBaseCoinInfoModel | OmniCoinInfoModel | RippleCoinInfoModel | null;
+    GetCoinInfo() : BitcoinBaseCoinInfoModel | EthereumBaseCoinInfoModel | OmniCoinInfoModel | RippleCoinInfoModel | NemCoinInfoModel | null;
 
     GetAddress(
         device: Device,
@@ -47,7 +49,7 @@ export interface ICoinCommands {
     GetAddresses(
         device: Device,
         path: Array<Array<number> | string>,
-    ): Promise<Array< 
+    ): Promise<Array<
         ProkeyResponses.AddressModel |
         ProkeyResponses.EthereumAddress |
         ProkeyResponses.LiskAddress |
@@ -69,9 +71,10 @@ export interface ICoinCommands {
 
     SignTransaction(
         device: Device,
-        transaction:BitcoinTx | 
+        transaction:BitcoinTx |
                     EthereumTx |
-                    RippleTransaction,
+                    RippleTransaction |
+                    NEMSignTxMessage,
     ): Promise<ProkeyResponses.SignedTx |
         ProkeyResponses.EthereumSignedTx |
         ProkeyResponses.EosSignedTx |
@@ -79,8 +82,9 @@ export interface ICoinCommands {
         ProkeyResponses.TezosSignedTx |
         ProkeyResponses.BinanceSignTx |
         ProkeyResponses.CardanoSignedTx |
-        ProkeyResponses.RippleSignedTx>;
-    
+        ProkeyResponses.RippleSignedTx |
+        NEMSignedTx>;
+
     SignMessage(
         device: Device,
         path: Array<number>,
@@ -88,7 +92,7 @@ export interface ICoinCommands {
         coinName?: string
     ): Promise<ProkeyResponses.MessageSignature |
         ProkeyResponses.LiskMessageSignature>;
-    
+
     VerifyMessage(
         device: Device,
         address: string,

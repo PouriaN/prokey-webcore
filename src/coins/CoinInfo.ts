@@ -1,9 +1,9 @@
 /*
  * This is part of PROKEY HARDWARE WALLET project
  * Copyright (C) Prokey.io
- * 
+ *
  * Hadi Robati, hadi@prokey.io
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -71,6 +71,9 @@ export class CoinInfo {
                 break;
             case CoinBaseType.Ripple:
                 c = ProkeyCoinInfoModel.ripple;
+                break;
+            case CoinBaseType.NEM:
+                c = ProkeyCoinInfoModel.nem;
                 break;
         }
 
@@ -164,6 +167,18 @@ export class CoinInfo {
             }
         });
 
+        // Add list of Nem
+        ProkeyCoinInfoModel.nem.forEach(element => {
+            list.push({
+                Name: element.name,
+                Shortcut: element.shortcut,
+                Type: CoinBaseType.NEM,
+                Priority: element.priority,
+                ContractAddress: '',
+                Decimals: element.decimals,
+            })
+        });
+
         //! Sort the list by Priority
         list.sort((a, b) => {
             if (a.Priority > b.Priority)
@@ -241,6 +256,18 @@ export class CoinInfo {
                     Name: element.name,
                     Shortcut: element.shortcut,
                     Type: CoinBaseType.Ripple,
+                    Priority: element.priority,
+                    ContractAddress: '',
+                    Decimals: element.decimals,
+                });
+            });
+        }
+        else if(ct == CoinBaseType.NEM){
+            ProkeyCoinInfoModel.ripple.foreach(element => {
+                list.push({
+                    Name: element.name,
+                    Shortcut: element.shortcut,
+                    Type: CoinBaseType.NEM,
                     Priority: element.priority,
                     ContractAddress: '',
                     Decimals: element.decimals,

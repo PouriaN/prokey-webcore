@@ -1,9 +1,9 @@
 /*
  * This is part of PROKEY HARDWARE WALLET project
  * Copyright (C) Prokey.io
- * 
+ *
  * Hadi Robati, hadi@prokey.io
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -18,52 +18,50 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-import { Device } from "../device/Device";
+import {Device} from "../device/Device";
 import {
-    BitcoinBaseCoinInfoModel,
-    EthereumBaseCoinInfoModel,
-    Erc20BaseCoinInfoModel,
-    OmniCoinInfoModel
+  BitcoinBaseCoinInfoModel,
+  Erc20BaseCoinInfoModel,
+  EthereumBaseCoinInfoModel,
+  OmniCoinInfoModel
 } from '../models/CoinInfoModel'
-import { CoinBaseType, CoinInfo } from '../coins/CoinInfo'
-import { ICoinCommands } from '../device/ICoinCommand'
-import { BitcoinCommands } from '../device/BitcoinCommands';
-import { EthereumCommands } from '../device/EthereumCommands';
+import {CoinBaseType, CoinInfo} from '../coins/CoinInfo'
+import {ICoinCommands} from '../device/ICoinCommand'
+import {BitcoinCommands} from '../device/BitcoinCommands';
+import {EthereumCommands} from '../device/EthereumCommands';
 import {
-    AddressModel,
-    EthereumAddress,
-    LiskAddress,
-    NEMAddress,
-    RippleAddress,
-    CardanoAddress,
-    StellarAddress,
-    PublicKey,
-    CardanoPublicKey,
-    BinancePublicKey,
-    EosPublicKey,
-    LiskPublicKey,
-    TezosPublicKey,
-    SignedTx,
-    EthereumSignedTx,
-    EosSignedTx,
-    LiskSignedTx,
-    TezosSignedTx,
-    BinanceSignTx,
-    CardanoSignedTx,
-    Success
+  AddressModel,
+  BinancePublicKey,
+  BinanceSignTx,
+  CardanoAddress,
+  CardanoPublicKey,
+  CardanoSignedTx,
+  EosPublicKey,
+  EosSignedTx,
+  EthereumAddress,
+  EthereumSignedTx,
+  LiskAddress,
+  LiskMessageSignature,
+  LiskPublicKey,
+  LiskSignedTx,
+  MessageSignature,
+  NEMAddress,
+  PublicKey,
+  RippleAddress,
+  SignedTx,
+  StellarAddress,
+  Success,
+  TezosPublicKey,
+  TezosSignedTx
 } from "../models/Prokey";
-
-import {
-    MessageSignature,
-    LiskMessageSignature
-} from '../models/Prokey';
 
 import * as Util from '../utils/utils';
 
-import { BitcoinTx } from '../models/BitcoinTx';
-import { EthereumTx } from '../models/EthereumTx';
-import { RippleCommands } from "../device/RippleCommands";
-import { RippleSignedTx, RippleTransaction } from "../models/Responses-V6";
+import {BitcoinTx} from '../models/BitcoinTx';
+import {EthereumTx} from '../models/EthereumTx';
+import {RippleCommands} from "../device/RippleCommands";
+import {RippleSignedTx, RippleTransaction} from "../models/Responses-V6";
+import {NemCommands} from "../device/NemCommands";
 
 /**
  * This is the base class for all implemented wallets
@@ -99,6 +97,10 @@ export abstract class BaseWallet {
 
             case CoinBaseType.Ripple:
                 this._commands = new RippleCommands(_coinName);
+                break;
+
+            case CoinBaseType.NEM:
+                this._commands = new NemCommands(_coinName);
                 break;
 
             default:
@@ -159,13 +161,13 @@ export abstract class BaseWallet {
      * @param tx transaction to be signed by device
      */
     public async SignTransaction<T extends SignedTx | EthereumSignedTx | EosSignedTx | LiskSignedTx | TezosSignedTx | BinanceSignTx | CardanoSignedTx | RippleSignedTx>
-        (tx: BitcoinTx | EthereumTx | RippleTransaction): Promise<T> 
+        (tx: BitcoinTx | EthereumTx | RippleTransaction): Promise<T>
     {
         return await this._commands.SignTransaction(this._device, tx) as T;
     }
 
     /**
-     * Sign Message 
+     * Sign Message
      * @param path BIP32 Path to sign the message
      * @param message Message to be signed
      * @param coinName Optional, Only for Bitcoin based coins
@@ -181,7 +183,7 @@ export abstract class BaseWallet {
      * @param message Signed message
      * @param signature Signature
      * @param coinName Optional, Only for Bitcoin based coins
-     * @returns 
+     * @returns
      */
     public async VerifyMessage(address: string, message: string, signature: string, coinName?: string): Promise<Success> {
         const messageBytes = Util.StringToUint8Array(message);
