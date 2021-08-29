@@ -3,12 +3,12 @@ import {RippleCoinInfoModel, StellarCoinInfoModel} from "../models/CoinInfoModel
 import {CoinBaseType, CoinInfo} from "../coins/CoinInfo";
 import {Device} from "./Device";
 import {
-    MessageSignature,
-    PublicKey,
-    StellarAddress, StellarOperationMessage,
-    StellarSignedTx,
-    StellarSignTransactionRequest,
-    Success
+  MessageSignature,
+  PublicKey,
+  StellarAddress, StellarOperationMessage,
+  StellarSignedTx,
+  StellarSignTransactionRequest, StellarTxOpRequest,
+  Success
 } from "../models/Prokey";
 import {GeneralErrors, GeneralResponse} from "../models/GeneralResponse";
 import * as PathUtil from "../utils/pathUtils";
@@ -96,16 +96,13 @@ export class StellarCommands implements ICoinCommands {
     }
 
     public async SignTransaction(device: Device, transactionForSign: StellarSignTransactionRequest): Promise<string> {
-        MyConsole.Info("StellarSignTx", transactionForSign);
-        if (!device) {
-            let e: GeneralResponse = {
-                success: false,
-                errorCode: GeneralErrors.INVALID_PARAM,
-                errorMessage: "StellarCommands::SignTransaction->parameter Device cannot be null",
-            }
+        var OnFailure = (reason: any) => {
+          device.RemoveOnFailureCallBack(OnFailure);
 
-            throw e;
-        }
+          throw new Error(`Signing transaction failed: ${reason.message}`);
+        };
+
+        MyConsole.Info("StellarSignTx", transactionForSign);
 
         if (!transactionForSign) {
             let e: GeneralResponse = {
@@ -116,10 +113,18 @@ export class StellarCommands implements ICoinCommands {
 
             throw e;
         }
+        let firstOperationRequest = await device.SendMessage<StellarTxOpRequest>('StellarSignTx', transactionForSign.signTxMessage, 'StellarTxOpRequest');
+        MyConsole.Info("operation request", firstOperationRequest);
 
-        let operationRequest = await device.SendMessage<ProkeyResponses.StellarTxOpRequest>('StellarSignTx', transactionForSign.signTxMessage, 'StellarTxOpRequest');
+        for (let i=0; i < transactionForSign.operations.length - 1; i++) {
+            let operation = transactionForSign.operations[i];
+            let operationRequest = await device.SendMessage<StellarTxOpRequest>(operation.type, operation, 'StellarTxOpRequest');
+            MyConsole.Info("operation request", operationRequest);
+        }
 
-        return await this.prepareTransactionForBroadcast(device, transactionForSign);
+        let operation = transactionForSign.operations[transactionForSign.operations.length - 1];
+        let signResponse = await device.SendMessage<StellarSignedTx>(operation.type, operation, 'StellarSignedTx');
+        return await this.prepareTransactionForBroadcast(transactionForSign, signResponse);
     }
 
     public async VerifyMessage(device: Device, address: string, message: Uint8Array, signature: Uint8Array, coinName?: string): Promise<Success> {
@@ -139,15 +144,14 @@ export class StellarCommands implements ICoinCommands {
         }
     }
 
-    private async prepareTransactionForBroadcast(device: Device, transactionForSign: StellarSignTransactionRequest) {
-        let signResponse = await device.SendMessage<StellarSignedTx>('StellarPaymentOp', transactionForSign.paymentOperation, 'StellarSignedTx');
+    private async prepareTransactionForBroadcast(transactionForSign: StellarSignTransactionRequest, signResponse: StellarSignedTx) {
         let transactionModel = transactionForSign.transactionModel;
         let stringSignature = ByteArrayToHexString(signResponse.signature);
-        let decodedPublicKey = StrKey.encodeEd25519PublicKey(signResponse.public_key as Buffer);
+        let decodedPublicKey = StrKey.encodeEd25519PublicKey(Buffer.from(signResponse.public_key));
         transactionModel.addSignature(
             decodedPublicKey,
             Buffer.from(stringSignature, 'hex').toString('base64')
         );
-      return transactionModel.toEnvelope().toXDR().toString("base64");
+        return transactionModel.toEnvelope().toXDR().toString("base64");
     }
 }
