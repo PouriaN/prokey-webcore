@@ -1,9 +1,9 @@
 /*
  * This is part of PROKEY HARDWARE WALLET project
  * Copyright (C) Prokey.io
- * 
+ *
  * Hadi Robati, hadi@prokey.io
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -467,7 +467,7 @@ export type StellarTxOpRequest = {
 
 export type StellarSignTransactionRequest = {
     signTxMessage: StellarSignTxMessage,
-    paymentOperation: StellarOperationMessage
+    operations: StellarOperationMessage[]
     transactionModel: Transaction
 }
 
