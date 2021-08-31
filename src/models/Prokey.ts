@@ -330,8 +330,8 @@ export type NEMTransactionCommon = {
     network: number,
     timestamp: number,
     fee: number,
-    deadline: number,
-    signer: string,
+    deadline?: number,
+    signer?: string,
 }
 
 export type NEMMosaic = {
@@ -341,18 +341,18 @@ export type NEMMosaic = {
 }
 
 export type NEMTransfer = {
-    mosaics: Array<NEMMosaic>,
-    public_key: string,
+    mosaics?: Array<NEMMosaic>,
+    public_key?: string,
     recipient: string,
     amount: number,
-    payload: string,
+    payload?: string,
 }
 
 export type NEMProvisionNamespace = {
     namespace: string,
     sink: string,
     fee: number,
-    parent: string,
+    parent?: string,
 }
 
 export type NEMMosaicLevyType = {
