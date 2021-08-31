@@ -1,6 +1,12 @@
 import {ProkeyBaseBlockChain} from "../ProkeyBaseBlockChain";
 import {RequestAddressInfo} from "../../../../../models/GenericWalletModel";
-import {NemAccountInfo, NemAccountTransactionResponse, NemTransactionResponse} from "./NemModels";
+import {
+  NemAccountInfo,
+  NemAccountTransactionResponse,
+  NemSubmitTransaction,
+  NemTransactionResponse,
+  SubmitTransactionResponse
+} from "./NemModels";
 
 export class NemBlockchain extends ProkeyBaseBlockChain {
   _coinName: string;
@@ -11,7 +17,12 @@ export class NemBlockchain extends ProkeyBaseBlockChain {
     this._coinName = coinName;
   }
 
-  public async BroadCastTransaction(data: string) {
+  public async BroadCastTransaction(data: NemSubmitTransaction): Promise<SubmitTransactionResponse> {
+    try {
+      return await this.PostToServer<SubmitTransactionResponse>(`${this._coinName}/transaction/submit`, data);
+    } catch (error) {
+      throw new Error("error in submit transaction")
+    }
   }
 
   public async GetAddressInfo(reqAddress: RequestAddressInfo) {
@@ -23,7 +34,7 @@ export class NemBlockchain extends ProkeyBaseBlockChain {
   }
 
   public async GetAccountTransactions(accountAddress: string, previousPageHash?: string) : Promise<Array<NemTransactionResponse> | null> {
-    let queryUrl = `${this._coinName}/account/transaction/?accountAddress=${accountAddress}`;
+    let queryUrl = `${this._coinName}/account/transactions/?accountAddress=${accountAddress}`;
     if (previousPageHash) {
       queryUrl += `&hash=${previousPageHash}`
     }

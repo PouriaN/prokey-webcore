@@ -11,10 +11,11 @@ import {
 } from "../models/Prokey";
 import {NemCoinInfoModel} from "../models/CoinInfoModel";
 import {CoinBaseType, CoinInfo} from "../coins/CoinInfo";
-import {GeneralErrors} from "../models/GeneralResponse";
+import {GeneralErrors, GeneralResponse} from "../models/GeneralResponse";
 import * as PathUtil from "../utils/pathUtils";
 import * as ProkeyResponses from "../models/Prokey";
 import * as Utility from "../utils/utils";
+import {MyConsole} from "../utils/console";
 
 export class NemCommands implements ICoinCommands {
   private readonly _coinInfo: NemCoinInfoModel;
@@ -92,10 +93,26 @@ export class NemCommands implements ICoinCommands {
   }
 
   public async SignTransaction(device: Device, transaction: NEMSignTxMessage): Promise<NEMSignedTx> {
-    return {
-      data: "test",
-      signature: "test"
+    var OnFailure = (reason: any) => {
+      device.RemoveOnFailureCallBack(OnFailure);
+
+      throw new Error(`Signing transaction failed: ${reason.message}`);
     };
+
+    MyConsole.Info("NEMSignTxMessage", transaction);
+
+    if (!transaction) {
+      let e: GeneralResponse = {
+        success: false,
+        errorCode: GeneralErrors.INVALID_PARAM,
+        errorMessage: "NemCommands::SignTransaction->parameter transaction cannot be null",
+      }
+
+      throw e;
+    }
+    let transactionResponse = await device.SendMessage<NEMSignedTx>('NEMSignTx', transaction, 'NEMSignedTx');
+    device.RemoveOnFailureCallBack(OnFailure);
+    return transactionResponse;
   }
 
   public async VerifyMessage(device: Device, address: string, message: Uint8Array, signature: Uint8Array, coinName?: string): Promise<Success> {

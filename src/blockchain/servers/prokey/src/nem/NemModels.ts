@@ -61,3 +61,20 @@ export interface NemTransaction {
   "version": number,
   "signer": string
 }
+
+export interface NemSubmitTransaction {
+  data: string,
+  signature: string
+}
+
+export interface SubmitTransactionResponse {
+  "type": number,
+  "code": number,
+  "message": string,
+  "transactionHash": {
+    "data": string
+  },
+  "innerTransactionHash": {
+    "data": string
+  }
+}

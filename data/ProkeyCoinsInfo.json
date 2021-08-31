@@ -14600,7 +14600,7 @@
   "nem": [
     {
       "name": "Nem",
-      "shortcut": "XEM",
+      "shortcut": "Nem",
       "slip44": 43,
       "decimals": 6,
       "priority": 7,
