@@ -10,8 +10,8 @@ import {CoinBaseType} from "../coins/CoinInfo";
 import {Device} from "../device/Device";
 import {NemCoinInfoModel} from "../models/CoinInfoModel";
 import {AddressModel, NEMAddress, NEMSignedTx, NEMSignTxMessage} from "../models/Prokey";
-import {createTx} from "../../helpers/nem/NemSignTxHelper";
-import {NEMTransferTransaction} from "../../helpers/nem/NemWalletModels";
+import {createTx} from "../helpers/nem/NemSignTxHelper";
+import {NEMTransferTransaction} from "../helpers/nem/NemWalletModels";
 import {ByteArrayToHexString} from "../utils/utils";
 
 var WAValidator = require('multicoin-address-validator');

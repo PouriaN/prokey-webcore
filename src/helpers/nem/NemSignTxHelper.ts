@@ -8,7 +8,7 @@ import {
   NEMMosaicCreation,
   NEMMosaicDefinition,
   NEMMosaicSupplyChange
-} from "../../src/models/Prokey";
+} from "../../models/Prokey";
 import {
   NEMAggregateModificationTransaction,
   NEMImportanceTransaction, NEMMosaicCreationTransaction, NEMProvisionNamespaceTransaction, NEMSupplyChangeTransaction,
