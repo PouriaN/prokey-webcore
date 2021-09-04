@@ -334,11 +334,11 @@ export class StellarWallet extends BaseWallet {
         case 'hash':
 
           signMessage.memo_type = 3;
-          signMessage.memo_hash = memo.value.toString('hex');
+          signMessage.memo_hash = Buffer.from(memo.value).toString('hex');
           break;
         case 'return':
           signMessage.memo_type = 4;
-          signMessage.memo_hash = memo.value.toString('hex');
+          signMessage.memo_hash = Buffer.from(memo.value).toString('hex');
           break;
         default:
           signMessage.memo_type = 0;
