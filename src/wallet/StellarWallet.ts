@@ -2,17 +2,16 @@ import {BaseWallet} from "./BaseWallet";
 import {Device} from "../device/Device";
 import {CoinBaseType} from "../coins/CoinInfo";
 import {StellarCoinInfoModel} from "../models/CoinInfoModel";
-import * as PathUtil from "../utils/pathUtils";
 import {
   AddressModel,
-  StellarAddress, StellarAsset, StellarOperationMessage, StellarPaymentOp,
+  StellarAddress, StellarOperationMessage, StellarPaymentOp,
   StellarSignTransactionRequest,
   StellarSignTxMessage
 } from "../models/Prokey";
 import {StellarBlockchain} from "../blockchain/servers/prokey/src/stellar/Stellar";
 import {
   StellarAccountInfo,
-  StellarFee, StellarTransactionOperation, StellarTransactionOperationResponse,
+  StellarFee, StellarTransactionOperationResponse,
   StellarTransactionResponse
 } from "../blockchain/servers/prokey/src/stellar/StelllarModels";
 import {
@@ -20,8 +19,7 @@ import {
   Asset,
   Keypair,
   Memo,
-  MemoText,
-  Operation, Transaction,
+  Operation, 
   TransactionBuilder
 } from "stellar-base";
 
@@ -146,12 +144,6 @@ export class StellarWallet extends BaseWallet {
     return this.transformTransaction(path, stellarTransactionModel);
   }
 
-  /**
-   * Transforms StellarSdk.Transaction to TrezorConnect.StellarTransaction
-   * @param {string} path
-   * @param {StellarSdk.Transaction} transaction
-   * @returns {TrezorConnect.StellarTransaction}
-   */
   public transformTransaction(path: Array<number>, transaction): StellarSignTransactionRequest {
     const amounts = ['amount', 'sendMax', 'destAmount', 'startingBalance', 'limit'];
     const assets = ['asset', 'sendAsset', 'destAsset', 'selling', 'buying', 'line'];
@@ -159,17 +151,14 @@ export class StellarWallet extends BaseWallet {
     const operations = transaction.operations.map((o, i) => {
       const operation = {...o};
 
-      // transform StellarSdk.Signer
       if (operation.signer) {
         operation.signer = this.transformSigner(operation.signer);
       }
 
-      // transform asset path
       if (operation.path) {
         operation.path = operation.path.map(this.transformAsset);
       }
 
-      // transform "price" field to { n: number, d: number }
       if (typeof operation.price === 'string') {
         const xdrOperation = transaction.tx.operations()[i];
         operation.price = {
@@ -178,21 +167,18 @@ export class StellarWallet extends BaseWallet {
         };
       }
 
-      // transform amounts
       amounts.forEach(field => {
         if (typeof operation[field] === 'string') {
           operation[field] = this.transformAmount(operation[field]);
         }
       });
 
-      // transform assets
       assets.forEach(field => {
         if (operation[field]) {
           operation[field] = this.transformAsset(operation[field]);
         }
       });
 
-      // add missing field
       if (operation.type === 'allowTrust') {
         const allowTrustAsset = new Asset(operation.assetCode, operation.trustor);
         operation.asset = this.transformAsset(allowTrustAsset);
@@ -203,7 +189,6 @@ export class StellarWallet extends BaseWallet {
         operation.value = operation.value.toString('hex');
       }
 
-      // transform type
       return this.transformType(operation);
     });
 
@@ -273,10 +258,6 @@ export class StellarWallet extends BaseWallet {
     }
   }
 
-  /**
-   * @param {StellarSdk.Signer} signer
-   * @returns { type: 1 | 2 | 3, key: string, weight: number }
-   */
   public transformSigner(signer) {
     let type = 0;
     let key;
@@ -300,11 +281,6 @@ export class StellarWallet extends BaseWallet {
     };
   }
 
-  /**
-   * Transforms StellarSdk.Asset to TrezorConnect.StellarTransaction.Asset
-   * @param {StellarSdk.Asset} asset
-   * @returns { type: 0 | 1 | 2, code: string, issuer?: string }
-   */
   public transformAsset(asset) {
     if (asset.isNative()) {
       return {
@@ -319,20 +295,10 @@ export class StellarWallet extends BaseWallet {
     };
   }
 
-  /**
-   * Transforms amount from decimals (lumens) to integer (stroop)
-   * @param {string} amount
-   * @returns {string}
-   */
   public transformAmount(amount) {
     return new BigNumber(amount).times(10000000).toString();
   }
 
-  /**
-   * Transforms StellarSdk.Operation.type to TrezorConnect.StellarTransaction.Operation.type
-   * @param {string} type
-   * @returns {string}
-   */
   public transformType(operation): StellarOperationMessage | null {
     let operationMessage: StellarOperationMessage;
     switch (operation.type) {
