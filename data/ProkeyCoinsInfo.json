@@ -14616,7 +14616,7 @@
     },
     {
       "name": "Stellar Testnet",
-      "shortcut": "Xlm",
+      "shortcut": "tXlm",
       "slip44": 148,
       "decimals": 0,
       "priority": 100,
