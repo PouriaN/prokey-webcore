@@ -45,6 +45,11 @@ export class StellarWallet extends BaseWallet {
     return WAValidator.validate(address, "xlm");
   }
 
+  /**
+   * discover network for collecting this device accounts information
+   * @param accountFindCallBack
+   * @returns Array<StellarAccountInfo> an array of accounts information
+   */
   public async StartDiscovery(accountFindCallBack?: (accountInfo: StellarAccountInfo) => void): Promise<Array<StellarAccountInfo>> {
     return new Promise<Array<StellarAccountInfo>>(async (resolve, reject) => {
       let accountNumber = 0;
@@ -62,6 +67,11 @@ export class StellarWallet extends BaseWallet {
     });
   }
 
+  /**
+   * get account info
+   * @param accountNumber account number in device
+   * @returns StellarAccountInfo account information
+   */
   public async GetAccountInfo(accountNumber: number): Promise<StellarAccountInfo | null> {
     let path = this.GetCoinPath(accountNumber);
     let address = await this.GetAddress<StellarAddress>(path.path, false);
@@ -84,6 +94,14 @@ export class StellarWallet extends BaseWallet {
     return await this._block_chain.GetCurrentFee();
   }
 
+  /**
+   * prepare payment transaction request object for sign in device and broadcast over network
+   * @param toAccount receiver account
+   * @param amount
+   * @param accountNumber user account number in device
+   * @param selectedFee user selected fee
+   * @returns StellarSignTransactionRequest
+   */
   public async GenerateTransaction(toAccount: string, amount: number, accountNumber: number, selectedFee: string): Promise<StellarSignTransactionRequest> {
     // TODO: add memo latter
     // Check balance
@@ -117,6 +135,14 @@ export class StellarWallet extends BaseWallet {
     return this.transformTransaction(path, stellarTransactionModel);
   }
 
+  /**
+   * prepare create account transaction request object for sign in device and broadcast over network
+   * @param toAccount requested account for creation
+   * @param amount
+   * @param accountNumber user account number in device
+   * @param selectedFee user selected fee
+   * @returns StellarSignTransactionRequest
+   */
   public async GenerateCreateAccountTransaction(toAccount: string, amount: number, accountNumber: number, selectedFee: string): Promise<StellarSignTransactionRequest> {
     let balance = this.GetAccountBalance(accountNumber);
     let path = this.GetCoinPath(accountNumber).path;
@@ -144,6 +170,11 @@ export class StellarWallet extends BaseWallet {
     return this.transformTransaction(path, stellarTransactionModel);
   }
 
+  /**
+   * transform stellar sdk transaction to prokey transaction object
+   * @param path BIP path
+   * @param transaction stellar sdk transaction
+   */
   public transformTransaction(path: Array<number>, transaction): StellarSignTransactionRequest {
     const amounts = ['amount', 'sendMax', 'destAmount', 'startingBalance', 'limit'];
     const assets = ['asset', 'sendAsset', 'destAsset', 'selling', 'buying', 'line'];

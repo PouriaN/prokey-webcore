@@ -5,7 +5,7 @@ import {Device} from "./Device";
 import {
   MessageSignature,
   PublicKey,
-  StellarAddress, StellarOperationMessage,
+  StellarAddress,
   StellarSignedTx,
   StellarSignTransactionRequest, StellarTxOpRequest,
   Success
@@ -14,10 +14,8 @@ import {GeneralErrors, GeneralResponse} from "../models/GeneralResponse";
 import * as PathUtil from "../utils/pathUtils";
 import * as ProkeyResponses from "../models/Prokey";
 import {MyConsole} from "../utils/console";
-import {StrKey, Transaction} from "stellar-base";
-import {StellarAccountInfo} from "../blockchain/servers/prokey/src/stellar/StelllarModels";
+import {StrKey} from "stellar-base";
 import * as Utility from "../utils/utils";
-import { util } from "protobufjs";
 import { ByteArrayToHexString } from "../utils/utils"
 
 export class StellarCommands implements ICoinCommands {
@@ -27,6 +25,13 @@ export class StellarCommands implements ICoinCommands {
         this._coinInfo = CoinInfo.Get<RippleCoinInfoModel>(coinName, CoinBaseType.STELLAR);
     }
 
+    /**
+     * Get stellar account address based on given path
+     * @param device Prokey device instance
+     * @param path BIP path
+     * @param showOnProkey true means show the address on device display
+     * @returns StellarAddress stellar unique address
+     */
     public async GetAddress(device: Device, path: Array<number> | string, showOnProkey: boolean = true): Promise<StellarAddress> {
         if (device == null || path == null) {
             return Promise.reject({ success: false, errorCode: GeneralErrors.INVALID_PARAM });
@@ -47,6 +52,12 @@ export class StellarCommands implements ICoinCommands {
         return await device.SendMessage<ProkeyResponses.StellarAddress>('StellarGetAddress', param, 'StellarAddress');
     }
 
+    /**
+     * Get a list of account addresses based on given paths
+     * @param device Prokey device instance
+     * @param paths List of BIP paths
+     * @constructor
+     */
     public async GetAddresses(device: Device, paths: Array<Array<number> | string>): Promise<Array<StellarAddress>> {
         let stellarAddresses: Array<StellarAddress> = new Array<StellarAddress>();
         for (const path of paths) {
@@ -55,10 +66,19 @@ export class StellarCommands implements ICoinCommands {
         return stellarAddresses;
     }
 
+    /**
+     * Get Coin Info
+     */
     public GetCoinInfo(): StellarCoinInfoModel {
         return this._coinInfo;
     }
 
+    /**
+     * Get Public key
+     * @param device The prokey device
+     * @param path BIP path
+     * @param showOnProkey true means show the public key on prokey display
+     */
     public async GetPublicKey(device: Device, path: Array<number> | string, showOnProkey: boolean = true): Promise<PublicKey> {
         if (device == null || path == null) {
             return Promise.reject({ success: false, errorCode: GeneralErrors.INVALID_PARAM });
@@ -78,6 +98,13 @@ export class StellarCommands implements ICoinCommands {
         return await device.SendMessage<ProkeyResponses.PublicKey>('GetPublicKey', param, 'PublicKey');
     }
 
+    /**
+     * Sign Message
+     * @param device Prokey device instance
+     * @param path array of BIP32/44 Path
+     * @param message message to be signed
+     * @param coinName coin name
+     */
     public async SignMessage(device: Device, path: Array<number>, message: Uint8Array, coinName?: string): Promise<MessageSignature> {
         let scriptType = PathUtil.GetScriptType(path);
 
@@ -95,6 +122,29 @@ export class StellarCommands implements ICoinCommands {
         return res;
     }
 
+    /**
+     * Verify Message
+     * @param device Prokey device instance
+     * @param address address
+     * @param message message
+     * @param signature signature data
+     * @param coinName coin name
+     */
+    public async VerifyMessage(device: Device, address: string, message: Uint8Array, signature: Uint8Array, coinName?: string): Promise<Success> {
+        return await device.SendMessage<ProkeyResponses.Success>('VerifyMessage', {
+            address: address,
+            signature: signature,
+            message: message,
+            coin_name: coinName || 'Stellar',
+        }, 'Success');
+    }
+
+    /**
+     * sign transaction
+     * @param device
+     * @param transactionForSign a model that con
+     * @constructor
+     */
     public async SignTransaction(device: Device, transactionForSign: StellarSignTransactionRequest): Promise<string> {
         var OnFailure = (reason: any) => {
           device.RemoveOnFailureCallBack(OnFailure);
@@ -124,18 +174,14 @@ export class StellarCommands implements ICoinCommands {
 
         let operation = transactionForSign.operations[transactionForSign.operations.length - 1];
         let signResponse = await device.SendMessage<StellarSignedTx>(operation.type, operation, 'StellarSignedTx');
-        return await this.prepareTransactionForBroadcast(transactionForSign, signResponse);
+        return await StellarCommands.prepareTransactionForBroadcast(transactionForSign, signResponse);
     }
 
-    public async VerifyMessage(device: Device, address: string, message: Uint8Array, signature: Uint8Array, coinName?: string): Promise<Success> {
-        return await device.SendMessage<ProkeyResponses.Success>('VerifyMessage', {
-            address: address,
-            signature: signature,
-            message: message,
-            coin_name: coinName || 'Stellar',
-        }, 'Success');
-    }
-
+    /**
+     * get byte array of path if its serialized
+     * @param path
+     * @constructor
+     */
     public GetAddressArray(path: Array<number> | string) : Array<number> {
         if (typeof path == "string") {
                 return  PathUtil.getHDPath(path);
@@ -144,7 +190,13 @@ export class StellarCommands implements ICoinCommands {
         }
     }
 
-    private async prepareTransactionForBroadcast(transactionForSign: StellarSignTransactionRequest, signResponse: StellarSignedTx) {
+    /**
+     * prepare signed transaction for sending over network
+     * @param transactionForSign stellar transaction model
+     * @param signResponse device sign response
+     * @private
+     */
+    private static async prepareTransactionForBroadcast(transactionForSign: StellarSignTransactionRequest, signResponse: StellarSignedTx) {
         let transactionModel = transactionForSign.transactionModel;
         let stringSignature = ByteArrayToHexString(signResponse.signature);
         let decodedPublicKey = StrKey.encodeEd25519PublicKey(Buffer.from(signResponse.public_key));
