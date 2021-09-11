@@ -142,7 +142,7 @@ export class StellarCommands implements ICoinCommands {
     /**
      * sign transaction
      * @param device
-     * @param transactionForSign a model that con
+     * @param transactionForSign a model that containg a transaction model for device and sdk for create signed transaction 
      * @constructor
      */
     public async SignTransaction(device: Device, transactionForSign: StellarSignTransactionRequest): Promise<string> {
@@ -180,7 +180,7 @@ export class StellarCommands implements ICoinCommands {
     /**
      * get byte array of path if its serialized
      * @param path
-     * @constructor
+     * @returns Array<number> account BIP path
      */
     public GetAddressArray(path: Array<number> | string) : Array<number> {
         if (typeof path == "string") {
