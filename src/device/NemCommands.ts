@@ -27,6 +27,13 @@ export class NemCommands implements ICoinCommands {
     }
   }
 
+  /**
+   * Get nem account address based on given path
+   * @param device Prokey device instance
+   * @param path BIP path
+   * @param showOnProkey true means show the address on device display
+   * @returns NEMAddress nem unique address
+   */
   public async GetAddress(device: Device, path: Array<number> | string, showOnProkey: boolean = true): Promise<NEMAddress> {
     if (device == null || path == null) {
       return Promise.reject({ success: false, errorCode: GeneralErrors.INVALID_PARAM });
@@ -44,6 +51,12 @@ export class NemCommands implements ICoinCommands {
     return await device.SendMessage<ProkeyResponses.NEMAddress>('NEMGetAddress', param, 'NEMAddress');
   }
 
+  /**
+   * Get a list of account addresses based on given paths
+   * @param device Prokey device instance
+   * @param paths List of BIP paths
+   * @returns Array<NEMAddress>
+   */
   public async GetAddresses(device: Device, paths: Array<Array<number> | string>): Promise<Array<NEMAddress>> {
     let nemAddresses: Array<NEMAddress> = new Array<NEMAddress>();
     for (const path of paths) {
@@ -52,10 +65,19 @@ export class NemCommands implements ICoinCommands {
     return nemAddresses;
   }
 
+  /**
+   * Get Coin Info
+   */
   public GetCoinInfo(): NemCoinInfoModel {
     return this._coinInfo;
   }
 
+  /**
+   * Get Public key
+   * @param device The prokey device
+   * @param path BIP path
+   * @param showOnProkey true means show the public key on prokey display
+   */
   public async GetPublicKey(device: Device, path: Array<number> | string, showOnProkey?: boolean): Promise<PublicKey> {
     if (device == null || path == null) {
       return Promise.reject({ success: false, errorCode: GeneralErrors.INVALID_PARAM });
@@ -75,6 +97,13 @@ export class NemCommands implements ICoinCommands {
     return await device.SendMessage<ProkeyResponses.PublicKey>('GetPublicKey', param, 'PublicKey');
   }
 
+  /**
+   * Sign Message
+   * @param device Prokey device instance
+   * @param path array of BIP32/44 Path
+   * @param message message to be signed
+   * @param coinName coin name
+   */
   public async SignMessage(device: Device, path: Array<number>, message: Uint8Array, coinName?: string): Promise<MessageSignature> {
     let scriptType = PathUtil.GetScriptType(path);
 
@@ -92,6 +121,29 @@ export class NemCommands implements ICoinCommands {
     return res;
   }
 
+  /**
+   * Verify Message
+   * @param device Prokey device instance
+   * @param address address
+   * @param message message
+   * @param signature signature data
+   * @param coinName coin name
+   */
+  public async VerifyMessage(device: Device, address: string, message: Uint8Array, signature: Uint8Array, coinName?: string): Promise<Success> {
+    return await device.SendMessage<ProkeyResponses.Success>('VerifyMessage', {
+      address: address,
+      signature: signature,
+      message: message,
+      coin_name: coinName || 'Nem',
+    }, 'Success');
+  }
+
+  /**
+   * sign transaction
+   * @param device
+   * @param transaction nem device transaction message request
+   * @returns NEMSignedTx a model containing transaction data and signature
+   */
   public async SignTransaction(device: Device, transaction: NEMSignTxMessage): Promise<NEMSignedTx> {
     var OnFailure = (reason: any) => {
       device.RemoveOnFailureCallBack(OnFailure);
@@ -115,15 +167,6 @@ export class NemCommands implements ICoinCommands {
     return transactionResponse;
   }
 
-  public async VerifyMessage(device: Device, address: string, message: Uint8Array, signature: Uint8Array, coinName?: string): Promise<Success> {
-    return await device.SendMessage<ProkeyResponses.Success>('VerifyMessage', {
-      address: address,
-      signature: signature,
-      message: message,
-      coin_name: coinName || 'Nem',
-    }, 'Success');
-  }
-
   private getNemNetworkId() {
     let networkId;
     if (this._coinInfo.test) {
@@ -133,6 +176,11 @@ export class NemCommands implements ICoinCommands {
     }
   }
 
+  /**
+   * get byte array of path if its serialized
+   * @param path
+   * @returns Array<number> account BIP path
+   */
   public GetAddressArray(path: Array<number> | string) : Array<number> {
     if (typeof path == "string") {
       return  PathUtil.getHDPath(path);

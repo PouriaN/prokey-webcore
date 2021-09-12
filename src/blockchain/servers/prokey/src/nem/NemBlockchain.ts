@@ -17,6 +17,11 @@ export class NemBlockchain extends ProkeyBaseBlockChain {
     this._coinName = coinName;
   }
 
+  /**
+   * broadcast transaction over network
+   * @param data nem signed transaction including transaction and signature
+   * @returns object response of transaction
+   */
   public async BroadCastTransaction(data: NemSubmitTransaction): Promise<SubmitTransactionResponse> {
     try {
       return await this.PostToServer<SubmitTransactionResponse>(`${this._coinName}/transaction/submit`, data);
@@ -25,7 +30,12 @@ export class NemBlockchain extends ProkeyBaseBlockChain {
     }
   }
 
-  public async GetAddressInfo(reqAddress: RequestAddressInfo) {
+  /**
+   * get account information from network
+   * @param reqAddress address
+   * @returns NemAccountInfo account info
+   */
+  public async GetAddressInfo(reqAddress: RequestAddressInfo): Promise<NemAccountInfo | null> {
     try {
       return await this.GetFromServer<NemAccountInfo>(`${this._coinName}/account/${reqAddress.address}`);
     } catch (error) {
@@ -33,6 +43,12 @@ export class NemBlockchain extends ProkeyBaseBlockChain {
     }
   }
 
+  /**
+   * get account transaction list from network
+   * @param accountAddress address of account
+   * @param previousPageHash used for pagination when you want next page
+   * @returns NemTransactionResponse list of transactions
+   */
   public async GetAccountTransactions(accountAddress: string, previousPageHash?: string) : Promise<Array<NemTransactionResponse> | null> {
     let queryUrl = `${this._coinName}/account/transactions/?accountAddress=${accountAddress}`;
     if (previousPageHash) {

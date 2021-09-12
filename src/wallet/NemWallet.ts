@@ -32,6 +32,11 @@ export class NemWallet extends BaseWallet {
     return WAValidator.validate(address, "xem");
   }
 
+  /**
+   * discover network for collecting this device accounts information
+   * @param accountFindCallBack
+   * @returns Array<NemAccount> an array of accounts information
+   */
   public async StartDiscovery(accountFindCallBack?: (accountInfo: NemAccount) => void): Promise<Array<NemAccount>>
   {
     return new Promise<Array<NemAccount>>(async (resolve, reject) => {
@@ -56,6 +61,11 @@ export class NemWallet extends BaseWallet {
     });
   }
 
+  /**
+   * get account info base on account number
+   * @param accountNumber account number in device
+   * @returns NemAccountInfo account information
+   */
   private async GetAccountInfo(accountNumber: number): Promise<NemAccountInfo | null> {
     let address = await this.GetAccountAddress(accountNumber);
 
@@ -70,6 +80,11 @@ export class NemWallet extends BaseWallet {
     return [];
   }
 
+  /**
+   * get account address base on account number
+   * @param accountNumber account number in device
+   * @returns string account address
+   */
   private async GetAccountAddress(accountNumber: number) {
     let path = this.GetCoinPath(accountNumber);
 
@@ -88,7 +103,15 @@ export class NemWallet extends BaseWallet {
     }
   }
 
-  public async GenerateTransaction(toAccount: string, amount: number, accountNumber: number, selectedFee: string, destinationTag?: number): Promise<NEMSignTxMessage> {
+  /**
+   * prepare payment transaction request object for sign in device and broadcast over network
+   * @param toAccount receiver account
+   * @param amount xem amount for sending
+   * @param accountNumber user account number in device
+   * @param selectedFee user selected fee
+   * @returns NEMSignTxMessage
+   */
+  public async GenerateTransaction(toAccount: string, amount: number, accountNumber: number, selectedFee: string): Promise<NEMSignTxMessage> {
     const coinPath = this.GetCoinPath(accountNumber);
     const senderAccountInfo: NemAccountInfo | null = await this.GetAccountInfo(accountNumber);
     const publicKey = await this.GetCommands().GetPublicKey(this.GetDevice(), coinPath.path, false);
@@ -112,6 +135,11 @@ export class NemWallet extends BaseWallet {
     return createTx(nemTransferModel, coinPath.path);
   }
 
+  /**
+   * broadcast transaction over network
+   * @param signedTransaction device signed transaction response
+   * @returns SubmitTransactionResponse
+   */
   public async SendTransaction(signedTransaction: NEMSignedTx): Promise<SubmitTransactionResponse> {
     // convert byte to array
     let transactionSubmitModel: NemSubmitTransaction = {
