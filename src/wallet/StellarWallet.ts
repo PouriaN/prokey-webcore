@@ -18,9 +18,9 @@ import {
   Account,
   Asset,
   Keypair,
-  Memo,
-  Operation, 
-  TransactionBuilder
+  Memo, MemoType,
+  Operation,
+  TransactionBuilder, xdr
 } from "stellar-base";
 
 const BigNumber = require('bignumber.js');
@@ -84,7 +84,7 @@ export class StellarWallet extends BaseWallet {
     return await this._block_chain.GetCurrentFee();
   }
 
-  public async GenerateTransaction(toAccount: string, amount: number, accountNumber: number, selectedFee: string): Promise<StellarSignTransactionRequest> {
+  public async GenerateTransaction(toAccount: string, amount: number, accountNumber: number, selectedFee: string, memoType: MemoType = "none", memoValue: string = ""): Promise<StellarSignTransactionRequest> {
     // TODO: add memo latter
     // Check balance
     let balance = this.GetAccountBalance(accountNumber);
@@ -111,16 +111,18 @@ export class StellarWallet extends BaseWallet {
           amount: amount.toString()
         })
       )
+      .addMemo(StellarWallet.getMemo(memoType, memoValue))
       .setTimeout(180) // wait 3 min for transaction
       .build();
 
     return this.transformTransaction(path, stellarTransactionModel);
   }
 
-  public async GenerateCreateAccountTransaction(toAccount: string, amount: number, accountNumber: number, selectedFee: string): Promise<StellarSignTransactionRequest> {
+  public async GenerateCreateAccountTransaction(toAccount: string, amount: number, accountNumber: number, selectedFee: string, memoType: MemoType = "none", memoValue: string = ""): Promise<StellarSignTransactionRequest> {
     let balance = this.GetAccountBalance(accountNumber);
     let path = this.GetCoinPath(accountNumber).path;
 
+    this.validateBalance(balance, accountNumber, amount, selectedFee);
     const accountObject = this.GetAccount(accountNumber);
     // fetch account for valid sequence
     const updatedAccount = await this.GetAccountInfoByAddress(accountObject.account_id);
@@ -139,6 +141,7 @@ export class StellarWallet extends BaseWallet {
           startingBalance: amount.toString()
         })
       )
+      .addMemo(StellarWallet.getMemo(memoType, memoValue))
       .setTimeout(180) // wait 3 min for transaction
       .build();
     return this.transformTransaction(path, stellarTransactionModel);
@@ -226,6 +229,24 @@ export class StellarWallet extends BaseWallet {
   public GetAccountReserveBalance(accountNumber: number): number {
     let account = this.GetAccount(accountNumber);
     return (2 + account.subentry_count + account.num_sponsoring - account.num_sponsored) * this.STELLAR_BASE_RESERVE;
+  }
+
+  private static getMemo(memoType: MemoType, memoValue: string): Memo {
+    if (memoValue == "") {
+      return Memo.none();
+    }
+    switch (memoType) {
+      case "hash":
+        return Memo.hash(memoValue);
+      case "id":
+        return Memo.id(memoValue)
+      case "none":
+        return Memo.none();
+      case "return":
+        return Memo.return(memoValue);
+      case "text":
+        return Memo.text(memoValue);
+    }
   }
 
   private validateBalance(balance: number, accountNumber: number, amount: number, selectedFee: string) {
