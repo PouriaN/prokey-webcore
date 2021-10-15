@@ -114,7 +114,7 @@ export abstract class BaseWallet {
                 break;
 
             case CoinBaseType.NEM:
-                this._commands = new NemCommands(_coinName);
+                this._commands = new NemCommands(coinName);
                 break;
 
             default:

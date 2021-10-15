@@ -23,6 +23,7 @@ import * as ProkeyResponses from '../models/Prokey';
 import { BitcoinTx } from '../models/BitcoinTx';
 import { EthereumTx } from '../models/EthereumTx';
 import { RippleTransaction } from '../models/Responses-V6';
+import {NEMSignedTx, NEMSignTxMessage} from "../models/Prokey";
 
 export interface ICoinCommands {
     GetAddress(
@@ -64,7 +65,8 @@ export interface ICoinCommands {
         device: Device,
         transaction:BitcoinTx | 
                     EthereumTx |
-                    RippleTransaction,
+                    RippleTransaction |
+                    NEMSignTxMessage,
     ): Promise<ProkeyResponses.SignedTx |
         ProkeyResponses.EthereumSignedTx |
         ProkeyResponses.EosSignedTx |
@@ -72,8 +74,9 @@ export interface ICoinCommands {
         ProkeyResponses.TezosSignedTx |
         ProkeyResponses.BinanceSignTx |
         ProkeyResponses.CardanoSignedTx |
-        ProkeyResponses.RippleSignedTx>;
-    
+        ProkeyResponses.RippleSignedTx |
+        ProkeyResponses.NEMSignedTx>;
+
     SignMessage(
         device: Device,
         path: Array<number>,

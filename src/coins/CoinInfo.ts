@@ -18,13 +18,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-import { BitcoinBaseCoinInfoModel, 
+import {
+    BitcoinBaseCoinInfoModel,
     EthereumBaseCoinInfoModel,
     Erc20BaseCoinInfoModel,
     MiscCoinInfoModel,
     OmniCoinInfoModel,
-    RippleCoinInfoModel,
- } from "../models/CoinInfoModel";
+    RippleCoinInfoModel, NemCoinInfoModel,
+} from "../models/CoinInfoModel";
 
  import * as EthereumNetworks from "../utils/ethereum-networks";
 
@@ -157,14 +158,16 @@ export class CoinInfo {
                                                                         Erc20BaseCoinInfoModel | 
                                                                         MiscCoinInfoModel | 
                                                                         OmniCoinInfoModel | 
-                                                                        RippleCoinInfoModel> {
+                                                                        RippleCoinInfoModel |
+                                                                        NemCoinInfoModel> {
 
         let list = new Array<BitcoinBaseCoinInfoModel | 
                                 EthereumBaseCoinInfoModel | 
                                 Erc20BaseCoinInfoModel | 
                                 MiscCoinInfoModel | 
                                 OmniCoinInfoModel | 
-                                RippleCoinInfoModel>();
+                                RippleCoinInfoModel |
+                                NemCoinInfoModel>();
 
         //! For all bitcoin base coins
         ProkeyCoinInfoModel.bitcoin.forEach(coin => {
@@ -225,15 +228,14 @@ export class CoinInfo {
         });
 
         // Add list of Nem
-        ProkeyCoinInfoModel.nem.forEach(element => {
-            list.push({
-                Name: element.name,
-                Shortcut: element.shortcut,
-                Type: CoinBaseType.NEM,
-                Priority: element.priority,
-                ContractAddress: '',
-                Decimals: element.decimals,
-            })
+        ProkeyCoinInfoModel.nem.forEach(nem => {
+            if(compareVersions(firmwareVersion, nem.support.optimum) >= 0) {
+                list.push({
+                    ...nem,
+                    coinBaseType: CoinBaseType.NEM,
+                    id: `nem${nem.shortcut}`,
+                })
+            }
         });
 
         //! Sort the list by Priority
@@ -332,7 +334,7 @@ export class CoinInfo {
                 });
             });
         }
-        else if(ct == CoinBaseType.NEM){
+        else if(coinType == CoinBaseType.NEM){
             ProkeyCoinInfoModel.ripple.foreach(element => {
                 list.push({
                     Name: element.name,
