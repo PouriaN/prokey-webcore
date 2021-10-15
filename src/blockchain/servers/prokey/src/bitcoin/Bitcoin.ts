@@ -69,7 +69,6 @@ export class BitcoinBlockChain extends ProkeyBaseBlockChain {
                     addresses += "," + req.address;
                 });
                 addresses = addresses.substring(1);
-                addresses = "/" + addresses;
 
                 var prokeyRes: Array<WalletModel.BitcoinBlockchainAddress> = await this.PostToServer<Array<WalletModel.BitcoinBlockchainAddress>>(`address/${this._coinName}/${addresses}`, null);
 
@@ -80,7 +79,7 @@ export class BitcoinBlockChain extends ProkeyBaseBlockChain {
                             address: reqAddresses[n].address,
                             addressModel: reqAddresses[n].addressModel,
                             balance: fullAddress.totalReceive - fullAddress.totalSent,
-                            exist: (fullAddress.transactionIds && fullAddress.transactionIds.length > 0),
+                            exist: fullAddress.totalReceive > 0,
                             txInfo: fullAddress,
                         };
 
@@ -132,12 +131,25 @@ export class BitcoinBlockChain extends ProkeyBaseBlockChain {
 
     /**
      * Load/Get Transactions list
-     * @param trs List of transaction ids
+     * @param addresses List of addresses to get info
      * @param count Number of transaction
      * @param offset Offset of first transaction
      */
-    public async GetLatestTransactions(trs: Array<number>, count = 100, offset = 0) : Promise<Array<WalletModel.BitcoinTxInfo>> {
+    public async GetLatestTransactions(addresses: Array<WalletModel.BitcoinAddressInfo>, count = 100, offset = 0) : Promise<Array<WalletModel.BitcoinTxInfo>> {
         return new Promise<Array<WalletModel.BitcoinTxInfo>>(async (resolve,reject)=>{
+            let trs: Array<number | string> = [];
+            addresses.forEach(add => {
+                if (add.txInfo.transactionIds) {
+                    add.txInfo.transactionIds.forEach(tr => {
+                        trs.push(tr);
+                    });
+                }
+                else if (add.txInfo.transactions) {
+                    add.txInfo.transactions.forEach(tr => {
+                        trs.push(tr.txId);
+                    });
+                }
+            });
 
             if (count > 1000)
                 count = 1000;
@@ -145,11 +157,13 @@ export class BitcoinBlockChain extends ProkeyBaseBlockChain {
                 offset = 0;
 
             // Sort the tr numbers desc
-            trs = trs.sort((a, b) => b - a);
-            // Remove the duplicates
-            trs = trs.filter((v, pos) => {
-                return trs.indexOf(v) == pos;
-            });
+            if (typeof trs[0] == "number") {
+                trs = trs.sort((a, b) => <number>b - <number>a);
+                // Remove the duplicates
+                trs = trs.filter((v, pos) => {
+                    return trs.indexOf(v) == pos;
+                });
+            }
 
             count = Math.min(trs.length - offset, count);
             if (count > 0)

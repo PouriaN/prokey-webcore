@@ -9,11 +9,11 @@
         "protob/**/*"
     ],
     "description": "This module can be used to communicate with Prokey device",
-    "author": "Prokey Techologies Sdn. Bhd. <info@prokey.io>",
+    "author": "Prokey Technologies Sdn. Bhd. <info@prokey.io>",
     "dependencies": {
         "@types/bytebuffer": "^5.0.40",
         "assert": "^2.0.0",
-        "big-number": "^2.0.0",
+        "bignumber.js": "^9.0.1",
         "buffer": "^5.4.3",
         "bytebuffer": "^5.0.1",
         "compare-versions": "^3.6.0",

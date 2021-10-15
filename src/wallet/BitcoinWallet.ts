@@ -289,13 +289,8 @@ export class BitcoinWallet extends BaseWallet {
         // WE ONLY CHECK THE CURRENT DISCOVERED ACCOUNT
         const account = this._bitcoinWallet.accounts[accountNumber];
 
-        // We need to get list of transaction for both wallet addresses and change addresses.
-        // Because the wallet may send a TX from change address
-        let trs: Array<number> = [];
-        account.addresses.concat(account.changeAddresses).forEach(address => address.txInfo.transactionIds.forEach(transactionId => trs.push(transactionId)));
-
         // Retrive transaction list from server
-        let listOfTransactions = await this._blockchain.GetLatestTransactions(trs, numberOfTransactions, startIndex);
+        let listOfTransactions = await this._blockchain.GetLatestTransactions(account.addresses, numberOfTransactions, startIndex);
 
         let txViewList = new Array<WalletModel.BitcoinTransactionView>();
 
@@ -333,7 +328,7 @@ export class BitcoinWallet extends BaseWallet {
 
                     //! Check if it's OMNI
                     for(let j = 0; j<tx.outputs.length; j++) {
-                        if(tx.outputs[j].script.includes("OP_RETURN")) {
+                        if(tx.outputs[j].script && tx.outputs[j].script.includes("OP_RETURN")) {
                             isOpReturn = true;
                             break;
                         }
@@ -414,7 +409,7 @@ export class BitcoinWallet extends BaseWallet {
 
                     //! Check if there is a OP_RETURN 
                     for(let k = 0; k<tx.outputs.length; k++) {
-                        if(tx.outputs[k].script.includes("OP_RETURN")) {
+                        if(tx.outputs[k].script && tx.outputs[k].script.includes("OP_RETURN")) {
                             isOpReturn = true;
                         }
 
@@ -516,7 +511,7 @@ export class BitcoinWallet extends BaseWallet {
         if(selectedFee == 'economy' || selectedFee == 'low' || selectedFee == 'minimal' || selectedFee == 'min'){
             txFee = +fees.economy;
         } else if( selectedFee == 'priority' || selectedFee == 'high' || selectedFee == 'fast' || selectedFee == 'max') {
-            txFee = +fees.priotity;
+            txFee = +fees.priority;
         }
         
         let totalSend = 0;
@@ -687,9 +682,9 @@ export class BitcoinWallet extends BaseWallet {
         //! Fixed fees
         if(super.GetCoinInfo().name == "Dogecoin") {
             return <BitcoinFeeSelectionModel>{
-                economy: coinInfo.minfee_kb.toString(),
-                normal: coinInfo.minfee_kb.toString(),
-                priotity: coinInfo.minfee_kb.toString(),
+                economy: "100000000",
+                normal: "100000000",
+                priority: "100000000",
                 decimal: coinInfo.decimals,
                 unit: coinInfo.shortcut,
             }
@@ -707,7 +702,7 @@ export class BitcoinWallet extends BaseWallet {
         let fees: BitcoinFeeSelectionModel = {
             economy: (txLen * txFees.economy).toString(),
             normal: (txLen * txFees.normal).toString(),
-            priotity: (txLen * txFees.high).toString(),
+            priority: (txLen * txFees.high).toString(),
             unit: coinInfo.shortcut,
             decimal: coinInfo.decimals,
         }
@@ -757,6 +752,11 @@ export class BitcoinWallet extends BaseWallet {
 
         //! Create list of account UTXO
         let sortedUtoxs = this.CreateSortedUtxoList(acc);
+        if(sortedUtoxs.length == 0) {
+            MyConsole.Info("No UTXO");
+            //! Bitcoin based transactions has 1 input at least
+            return txLen + this._TX_DEFAULT_INPUT_SIZE;
+        }
 
         MyConsole.Info("Sorted UTXO", sortedUtoxs);
 
@@ -766,7 +766,7 @@ export class BitcoinWallet extends BaseWallet {
         receivers.forEach(element => {
             totalSend += element.value;
         });
-       
+
         // Check if we can handle this transaction only with one Input
         if (sortedUtoxs[0][0].amount >= totalSend + (txFees.economy * (txLen + this._TX_DEFAULT_INPUT_SIZE)))
         {
@@ -878,55 +878,63 @@ export class BitcoinWallet extends BaseWallet {
             throw new Error("Transaction inputs cannot be null or empty")
         }
 
-        let txHashIds = "";
-        tx.inputs.forEach(element => {
-            txHashIds += "," + element.prev_hash;
-        });
-
-        //! Removing the first ','
-        txHashIds = txHashIds.substring(1);
-
-        let prevTxs = await this._blockchain.GetTransactions(txHashIds);
-
-        if(prevTxs == null || prevTxs.length != tx.inputs.length) {
-            throw new Error("PrevTx are not set correctly")
-        }
-
         tx.refTxs = new Array<RefTransaction>();
-
-        prevTxs.forEach(prev => {
-            let ref: RefTransaction = {
-                hash: prev.hash,
-                version: prev.version,
-                lock_time: prev.lockTime,
-                bin_outputs: [],
-                inputs: [],
+        let n = tx.inputs.length;
+        let i = 0;
+        while(n > 0)
+        {
+            let txHashIds = "";
+            let perRequest = (n > 10) ? 10 : n;
+            
+            for(let j=0; j<perRequest; j++)
+            {
+                txHashIds += "," + tx.inputs[i++].prev_hash;
+                n--;
             }
 
-            if(timestamp == true){
-                ref.timestamp = prev.timeStamp;
+            //! Removing the first ','
+            txHashIds = txHashIds.substring(1);
+
+            let prevTxs = await this._blockchain.GetTransactions(txHashIds);
+
+            if(prevTxs == null || prevTxs.length != perRequest) {
+                throw new Error("PrevTx are not set correctly")
             }
 
-            prev.inputs.forEach( inp => {
-                ref.inputs.push({
-                    prev_hash: inp.spentTxHash,
-                    prev_index: inp.spentOutputIndex,
-                    sequence: inp.sequence,
-                    script_sig: inp.scriptHex,
+            prevTxs.forEach(prev => {
+                let ref: RefTransaction = {
+                    hash: prev.hash,
+                    version: prev.version,
+                    lock_time: prev.lockTime,
+                    bin_outputs: [],
+                    inputs: [],
+                }
+
+                if(timestamp == true){
+                    ref.timestamp = prev.timeStamp;
+                }
+
+                prev.inputs.forEach( inp => {
+                    ref.inputs.push({
+                        prev_hash: inp.spentTxHash,
+                        prev_index: inp.spentOutputIndex,
+                        sequence: inp.sequence,
+                        script_sig: inp.scriptHex,
+                    });
                 });
-            });
 
-            prev.outputs.forEach( out => {
-                ref.bin_outputs.push({
-                    amount: out.value,
-                    script_pubkey: out.scriptHex,
-                })
-            });
+                prev.outputs.forEach( out => {
+                    ref.bin_outputs.push({
+                        amount: out.value,
+                        script_pubkey: out.scriptHex,
+                    })
+                });
 
-            if(tx.refTxs){
-                tx.refTxs.push(ref);
-            }
-        });
+                if(tx.refTxs){
+                    tx.refTxs.push(ref);
+                }
+            });
+        }
     }
 }
 

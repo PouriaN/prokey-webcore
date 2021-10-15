@@ -32,6 +32,8 @@ import { GeneralResponse } from '../models/GeneralResponse';
 import { BaseWallet } from './BaseWallet';
 import { EthereumAddress } from "../models/Prokey";
 import { MyConsole } from "../utils/console";
+import * as EthereumNetworks from "../utils/ethereum-networks";
+import BigNumber from 'bignumber.js';
 var WAValidator = require('multicoin-address-validator');
 
 /**
@@ -50,20 +52,22 @@ export class EthereumWallet extends BaseWallet {
      * @param device Prokey device instance
      * @param coinNameOrContractAddress Coin name or contract address of ERC20, Check /data/ProkeyCoinsInfo.json
      * @param isErc20 Should be true if ERC20 is desired.
+     * @param coinInfo Optional coin info, If this parameter is not null, the wallet skips coinNameOrContractAddress
      */
-    constructor(device: Device, coinNameOrContractAddress: string, isErc20: boolean) {
-        super(device, coinNameOrContractAddress, isErc20 ? CoinBaseType.ERC20 : CoinBaseType.EthereumBase);
+    constructor(device: Device, coinNameOrContractAddress: string, isErc20: boolean, coinInfo?: Erc20BaseCoinInfoModel | EthereumBaseCoinInfoModel) {
+        //! If coinInfo parameter is not null, the value of coinNameOrContractAddress doesn't matter
+        super(device, coinNameOrContractAddress, (isErc20 == true) ? CoinBaseType.ERC20 : CoinBaseType.EthereumBase, undefined, coinInfo);
         
         this._isErc20 = isErc20;
 
         if(isErc20) {
             this._gasLimit = 65000;
             const ci = (super.GetCoinInfo() as Erc20BaseCoinInfoModel);
-            this._network = this.GetNetworkByChainId(ci.chain_id);
+            this._network = EthereumNetworks.GetNetworkByChainId(ci.chain_id);
             this._ethBlockChain = new EthereumBlockChain(this._network, true, ci.address);
         } else {
             const ci = (this.GetCoinInfo() as EthereumBaseCoinInfoModel);
-            this._network = this.GetNetworkByChainId(ci.chain_id);
+            this._network = EthereumNetworks.GetNetworkByChainId(ci.chain_id);
             this._ethBlockChain = new EthereumBlockChain(this._network);
         }
     }
@@ -181,7 +185,7 @@ export class EthereumWallet extends BaseWallet {
      * @param amount Amount to be sent in WEI
      * @param accountNumber Account number to send fund from
      */
-    public async GenerateTransaction(receivedAddress: string, amount: number, accountNumber: number = 0): Promise<EthereumTx> {
+    public async GenerateTransaction(receivedAddress: string, amount: BigNumber, accountNumber: number = 0): Promise<EthereumTx> {
 
         // Check if wallet is already loaded
         if(this._ethereumWallet == null || this._ethereumWallet.accounts == null){
@@ -210,11 +214,12 @@ export class EthereumWallet extends BaseWallet {
 
             // Check transaction fee
             if( ethAddInfo.balance == null || gasPrice * this._gasLimit > ethAddInfo.balance) {
-                throw new Error("Insufficient balance in the Ethereum wallet to pay the transaction fee");
+                let networkName = EthereumNetworks.GetNetworkFullNameByChainId((super.GetCoinInfo() as Erc20BaseCoinInfoModel).chain_id);
+                throw new Error(`Insufficient balance in the ${networkName} wallet to pay the transaction fee`);
             }
 
             // Check account balance
-            if(amount > account.balance) {
+            if(amount.gt(account.balance)) {
                 throw new Error("Insufficient balance");
             }
 
@@ -222,12 +227,13 @@ export class EthereumWallet extends BaseWallet {
             nonce = ethAddInfo.nonce || 0;
         } else {
             // Check account balance
-            if(amount > account.balance) {
+            if(amount.gt(account.balance)) {
                 throw new Error("Insufficient balance");
             }
 
             // Check account balance for pay the tx fee
-            if(amount + (gasPrice * this._gasLimit) > account.balance) {
+
+            if(amount.gt(account.balance - (gasPrice * this._gasLimit))) {
                 throw new Error("Insufficient balance to pay the transaction fee");
             }
 
@@ -370,8 +376,9 @@ export class EthereumWallet extends BaseWallet {
     public IsAddressValid(address: string): boolean {
         let coinInfo = this.GetCoinInfo();
 
-        let symbol: string = coinInfo.shortcut;
-        if(this._isErc20 || symbol.toLocaleLowerCase() == "trin"){
+        let symbol: string = coinInfo.shortcut.toLocaleLowerCase();
+        //! these coins are use same address encoding model
+        if(this._isErc20 || symbol == "trin" || symbol == "bnb" || symbol == "rbtc" || symbol == "trbtc"){
             symbol = "ETH";
         }
 
@@ -396,6 +403,15 @@ export class EthereumWallet extends BaseWallet {
         }
         
         return false;
+    }
+
+    /**
+     * Get the transaction fee
+     */
+    public async CalculateTransactionFee(): Promise<number> {
+        const gasPrice = await this._ethBlockChain.GetGasPrice();
+
+        return gasPrice * this._gasLimit;
     }
 
     /**
@@ -431,36 +447,5 @@ export class EthereumWallet extends BaseWallet {
         }
 
         return addInfo[0];
-    }
-
-    /**
-     * Get network by chainId
-     * @param chainId 
-     */
-    private GetNetworkByChainId(chainId: number): string {
-        switch(chainId) {
-            case 1:
-                return 'eth';       // Ethereum Mainnet
-            case 2:
-                return 'exp';       // Expanse Network	
-            case 3:
-                return 'ropsten'    // Ethereum Testnet Ropsten
-            case 4:
-                return 'trin';      // Ethereum Testnet Rinkeby
-            case 5:
-                return 'goerli';    // Ethereum Testnet Görli
-            case 8:
-                return 'ubq';       // Ubiq Network Mainnet
-            case 42:
-                return 'kovan';     // Ethereum Testnet Kovan
-            case 61:
-                return 'etc';       // Ethereum Classic Mainnet
-            case 64:
-                return 'ella';      // Ellaism
-            case 31102:
-                return 'ESN';       // Ethersocial Network
-            default:
-                return ''
-        }
     }
 }

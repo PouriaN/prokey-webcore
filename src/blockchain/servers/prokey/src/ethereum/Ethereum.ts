@@ -22,6 +22,7 @@ import { RequestAddressInfo } from '../../../../../models/GenericWalletModel';
 import { ProkeySendTransactionResponse } from '../models/ProkeyGenericModel';
 import * as WalletModel from '../../../../../models/EthereumWalletModel'
 import {ProkeyBaseBlockChain} from "../ProkeyBaseBlockChain";
+import {MyConsole} from "../../../../../utils/console";
 
 export class EthereumBlockChain extends ProkeyBaseBlockChain {
     
@@ -50,12 +51,20 @@ export class EthereumBlockChain extends ProkeyBaseBlockChain {
             response = await this.GetFromServer<Array<WalletModel.EthereumAddressInfo>>(`address/${this._network}/${reqAddress.address}`);
         }
 
-        return [{
+        let addInfo : Array<WalletModel.EthereumAddressInfo> = [{
             balance: response[0].balance,
             nonce: response[0].nonce,
             trKeys: response[0].trKeys,
             addressModel: reqAddress.addressModel,
         }];
+
+        if (this._isErc20) {
+            MyConsole.Info(`EthereumBlockChain::AddInfo:ERC20:${this._network}:${this._contractAddress}:${reqAddress.address}`, addInfo);
+        } else {
+            MyConsole.Info(`EthereumBlockChain::AddInfo:${this._network}:${reqAddress.address}`, addInfo);
+        }
+
+        return addInfo;
     }
 
     /**
@@ -94,10 +103,10 @@ export class EthereumBlockChain extends ProkeyBaseBlockChain {
 
     /**
      * Get List of transaction, this list is good for view(showing transaction history)
-     * @param trKeys List of transaction IDs, You can get these IDs from GetAddressInfo 
+     * @param trKeys List of transaction IDs, You can get these IDs from GetAddressInfo
      * @param count Number of transaction
      * @param offset Start index
-     * @returns 
+     * @returns
      */
     public async GetLatestTransactions(trKeys: Array<number>, count = 100, offset = 0) : Promise<Array<any>> {
         return new Promise<Array<WalletModel.EthereumTransaction>>(async (resolve,reject) => {

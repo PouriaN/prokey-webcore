@@ -1,9 +1,9 @@
 /*
  * This is part of PROKEY HARDWARE WALLET project
  * Copyright (C) Prokey.io
- *
+ * 
  * Hadi Robati, hadi@prokey.io
- *
+ * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -18,56 +18,62 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-import {Device} from "../device/Device";
+import { Device } from "../device/Device";
 import {
-  BitcoinBaseCoinInfoModel,
-  Erc20BaseCoinInfoModel,
-  EthereumBaseCoinInfoModel,
-  OmniCoinInfoModel
+    BitcoinBaseCoinInfoModel,
+    EthereumBaseCoinInfoModel,
+    Erc20BaseCoinInfoModel,
+    OmniCoinInfoModel,
+    RippleCoinInfoModel
 } from '../models/CoinInfoModel'
-import {CoinBaseType, CoinInfo} from '../coins/CoinInfo'
-import {ICoinCommands} from '../device/ICoinCommand'
-import {BitcoinCommands} from '../device/BitcoinCommands';
-import {EthereumCommands} from '../device/EthereumCommands';
+import { CoinBaseType, CoinInfo } from '../coins/CoinInfo'
+import { ICoinCommands } from '../device/ICoinCommand'
+import { BitcoinCommands } from '../device/BitcoinCommands';
+import { EthereumCommands } from '../device/EthereumCommands';
 import {
-  AddressModel,
-  BinancePublicKey,
-  BinanceSignTx,
-  CardanoAddress,
-  CardanoPublicKey,
-  CardanoSignedTx,
-  EosPublicKey,
-  EosSignedTx,
-  EthereumAddress,
-  EthereumSignedTx,
-  LiskAddress,
-  LiskMessageSignature,
-  LiskPublicKey,
-  LiskSignedTx,
-  MessageSignature,
-  NEMAddress, NEMSignedTx, NEMSignTxMessage,
-  PublicKey,
-  RippleAddress,
-  SignedTx,
-  StellarAddress,
-  Success,
-  TezosPublicKey,
-  TezosSignedTx
+    AddressModel,
+    EthereumAddress,
+    LiskAddress,
+    NEMAddress,
+    NEMSignedTx,
+    NEMSignTxMessage,
+    RippleAddress,
+    CardanoAddress,
+    StellarAddress,
+    PublicKey,
+    CardanoPublicKey,
+    BinancePublicKey,
+    EosPublicKey,
+    LiskPublicKey,
+    TezosPublicKey,
+    SignedTx,
+    EthereumSignedTx,
+    EosSignedTx,
+    LiskSignedTx,
+    TezosSignedTx,
+    BinanceSignTx,
+    CardanoSignedTx,
+    Success
 } from "../models/Prokey";
+
+import {
+    MessageSignature,
+    LiskMessageSignature
+} from '../models/Prokey';
 
 import * as Util from '../utils/utils';
 
-import {BitcoinTx} from '../models/BitcoinTx';
-import {EthereumTx} from '../models/EthereumTx';
-import {RippleCommands} from "../device/RippleCommands";
-import {RippleSignedTx, RippleTransaction} from "../models/Responses-V6";
-import {NemCommands} from "../device/NemCommands";
+import { BitcoinTx } from '../models/BitcoinTx';
+import { EthereumTx } from '../models/EthereumTx';
+import { RippleCommands } from "../device/RippleCommands";
+import { RippleSignedTx, RippleTransaction } from "../models/Responses-V6";
+import { NemCommands } from "../device/NemCommands";
 
 /**
  * This is the base class for all implemented wallets
  */
 export abstract class BaseWallet {
-    private _coinInfo: BitcoinBaseCoinInfoModel | EthereumBaseCoinInfoModel | Erc20BaseCoinInfoModel | OmniCoinInfoModel;
+    private _coinInfo: BitcoinBaseCoinInfoModel | EthereumBaseCoinInfoModel | Erc20BaseCoinInfoModel | OmniCoinInfoModel | RippleCoinInfoModel;
     private _commands!: ICoinCommands;
 
     /**
@@ -76,27 +82,35 @@ export abstract class BaseWallet {
      * @param _coinName Coin name, Check /data/ProkeyCoinsInfo.json
      * @param _coinType Coin type BitcoinBase | EthereumBase | ERC20 | NEM | OMNI | OTHERS
      */
-    constructor(private _device: Device, private _coinName: string, private _coinType: CoinBaseType) {
+    constructor(private _device: Device,
+        coinName: string,
+        coinType: CoinBaseType,
+        chainOrPropertyNumber?: number,
+        coinInfo?: BitcoinBaseCoinInfoModel | EthereumBaseCoinInfoModel | Erc20BaseCoinInfoModel | OmniCoinInfoModel | RippleCoinInfoModel) {
         if (_device == null)
             throw new Error('Device can not be null');
 
-        // will threw an exception if coin can not be found
-        this._coinInfo = CoinInfo.Get(_coinName, _coinType);
+        if(coinInfo == null){
+            // will threw an exception if coin can not be found
+            this._coinInfo = CoinInfo.Get(coinName, coinType, chainOrPropertyNumber);
+        } else {
+            this._coinInfo = coinInfo;
+        }
 
         // create the device commands
-        switch (_coinType) {
+        switch (coinType) {
             case CoinBaseType.BitcoinBase:
             case CoinBaseType.OMNI:
-                this._commands = new BitcoinCommands(_coinName, _coinType == CoinBaseType.OMNI);
+                this._commands = new BitcoinCommands(coinName, coinType == CoinBaseType.OMNI);
                 break;
 
             case CoinBaseType.EthereumBase:
             case CoinBaseType.ERC20:
-                this._commands = new EthereumCommands(_coinName, _coinType == CoinBaseType.ERC20);
+                this._commands = new EthereumCommands();
                 break;
 
             case CoinBaseType.Ripple:
-                this._commands = new RippleCommands(_coinName);
+                this._commands = new RippleCommands(coinName);
                 break;
 
             case CoinBaseType.NEM:
@@ -112,7 +126,7 @@ export abstract class BaseWallet {
     /**
      * Get CoinInfo
      */
-    public GetCoinInfo(): BitcoinBaseCoinInfoModel | EthereumBaseCoinInfoModel | Erc20BaseCoinInfoModel | OmniCoinInfoModel {
+    public GetCoinInfo(): BitcoinBaseCoinInfoModel | EthereumBaseCoinInfoModel | Erc20BaseCoinInfoModel | OmniCoinInfoModel | RippleCoinInfoModel {
         return this._coinInfo;
     }
 
@@ -167,7 +181,7 @@ export abstract class BaseWallet {
     }
 
     /**
-     * Sign Message
+     * Sign Message 
      * @param path BIP32 Path to sign the message
      * @param message Message to be signed
      * @param coinName Optional, Only for Bitcoin based coins
@@ -183,7 +197,7 @@ export abstract class BaseWallet {
      * @param message Signed message
      * @param signature Signature
      * @param coinName Optional, Only for Bitcoin based coins
-     * @returns
+     * @returns 
      */
     public async VerifyMessage(address: string, message: string, signature: string, coinName?: string): Promise<Success> {
         const messageBytes = Util.StringToUint8Array(message);
